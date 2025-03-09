@@ -4,6 +4,18 @@ using Metatheory.EGraphs
 
 abstract type Program end
 
+# struct Neg <: Program
+#     a::Program
+# end
+
+struct Var <: Program
+    name::Symbol
+end
+
+struct Constant <: Program
+    value::Int
+end
+
 struct Plus <: Program
     a::Program
     b::Program
@@ -19,54 +31,55 @@ struct Times <: Program
     b::Program
 end
 
-struct Neg <: Program
-    a::Program
+# struct IfElse <: Program
+#     cond::Program
+#     thn::Program
+#     els::Program
+# end
+
+# abstract type Proposition end
+
+# struct Prop <: Proposition
+#     expr::Symbol
+# end
+
+# abstract type Term end
+
+# struct TermPair <: Term
+#     term::Program
+#     prop::Proposition
+# end
+
+function TermInterface.maketerm(::Type{Program}, head, children, metadata = nothing)
+  head(children...)
 end
 
-struct Var <: Program
-    name::Symbol
+# function TermInterface.maketerm(::Type{Proposition}, head, children, metadata = nothing)
+#   head(children...)
+# end
+
+# function TermInterface.maketerm(::Type{Term}, head, children, metadata = nothing)
+#   head(children...)
+# end
+
+t_p = @theory a b c begin
+    #(IfElse(a, b, c), prop::Prop) --> (IfElse(prop.expr, b, c), prop) #why doesnt this get recognized
+    #(Var(a), prop::Prop) --> (IfElse(true, Var(a), Neg(Var(a))), prop)
+    #(Var(a)::Program, prop::Proposition) --> (IfElse(true, Var(a), Neg(Var(a))), prop)
+    #(Neg(Neg(a)), prop::Prop) == (a, prop)
+    #Term(Var(a), prop::Prop) == Term(IfElse(true, Var(a), Neg(Var(a))), prop)
+
+    
+    #Term(IfElse(true, a, b), prop::Prop) --> (IfElse(prop.expr, a, b), prop)
+    Var(a) --> 5
+    Var(a) == Plus(Var(a), Constant(0))
+    Constant(0) == Minus(Var(:a), Var(:a))
+    Plus(Var(a), Minus(Var(b), Var(c))) == Minus(Plus(Var(a), Var(b)), Var(c))
+    Plus(Var(a), Var(a)) == Times(Constant(2), Var(a))
 end
 
-struct Constant <: Program
-    value::Int
-end
-
-struct IfElse <: Program
-    cond::Program
-    thn::Program
-    els::Program
-end
-
-struct And <: Program
-    a::Program
-    b::Program
-end
-
-struct Or <: Program
-    a::Program
-    b::Program
-end
-
-struct Not <: Program
-    a::Program
-end
-
-struct Prop
-    expr::Symbol
-end
-
-struct Program_with_Context
-    program::Program
-    context::Prop
-end
-
-t_p = @theory a b c prop begin
-    (IfElse(a, b, c), prop::Prop) --> (IfElse(prop.expr, b, c), prop) #why doesnt this get recognized
-    (Var(a), prop::Prop) --> (IfElse(true, Var(a), Neg(Var(a))), prop)
-    Neg(Neg(a)) --> a
-end
-
-g_p = EGraph(:((Var(a), Prop(Var(a) ≥ 0))))
+#g_p = EGraph(:(Term(Var(a), Prop(Var(a) ≥ 0))))
+g_p = EGraph(:(Minus(Var(a), Constant(4))))
 println(g_p)
 saturate!(g_p, t_p)
 println(g_p)
