@@ -3,28 +3,6 @@ using Metatheory.Library
 using Metatheory.EGraphs
 using IterTools
 
-#compare this with using true and false
-
-# t₁ = @theory a begin
-#   is_positive(a) --> :a ≥ :0
-#   a --> cond(is_positive(a), a, -a)
-#   -(-a) == a
-# end
-
-# g₁ = EGraph{Expr, Nothing}(:(a))
-# saturate!(g₁, t₁)
-# println(g₁)
-
-# t₂ = @theory a begin
-#   is_positive(a) --> :a ≥ 0
-#   -a --> cond(is_positive(a), a, -a)
-#   -(-a) == a
-# end
-
-# g₂ = EGraph{Expr, Nothing}(:(-a))
-# saturate!(g₂, t₂)
-# println(g₂)
-
 t₁ = @theory a begin
   true --> :a ≥ :zero
   a --> cond(true, a, -a)
@@ -56,10 +34,7 @@ function get_eclass_constants(g::EGraph, c::EClass)
   for node in c.nodes  
       v = v_head(node)
       c = get_constant(g, v)
-      if typeof(c) != Symbol
-        println(typeof(c))
-        c = Symbol(c) #TODO find out why this is necessary
-      end
+      typeof(c) == Symbol || (c = Symbol(string(c))) #TODO Check if this always works
       constants[c] = node
     end
   return constants
@@ -71,13 +46,12 @@ Find equal constants in two eclasses
 If found, find equal expressions in the children
 Go on until all equal expressions are found
 """
-function eclass_intersect(g₁::EGraph, g₂::EGraph, c₁::EClass=g₁[g₁.root], c₂::EClass=g₂[g₂.root], seen=Set{Tuple{Id, Id}}())
-
-  #TODO add memoization
-  #I think you can record that something isnt seen yet, is being explored, or has been explored
+function eclass_intersect(g₁::EGraph, g₂::EGraph, c₁::EClass=g₁[g₁.root], c₂::EClass=g₂[g₂.root], seen=Set{Tuple{Id, Id}}(), found=Dict{Tuple{Id,Id},Union{Vector{Union{Symbol,Expr}}, Nothing}}())
+  # if the considered eclasses have already been seen together for this operator, we found a cycle and return nothing
   !in((c₁.id, c₂.id), seen) || (return nothing)
+  # if the eclasses have already been intersected, return the result (improves efficiency)
+  haskey(found, (c₁.id, c₂.id)) && (return found[(c₁.id, c₂.id)])
   push!(seen, (c₁.id, c₂.id))
-
   c₁_constants = get_eclass_constants(g₁, c₁)
   c₂_constants = get_eclass_constants(g₂, c₂)
 
@@ -87,11 +61,9 @@ function eclass_intersect(g₁::EGraph, g₂::EGraph, c₁::EClass=g₁[g₁.roo
   found_programs = Vector()
 
   for c in common_constants
-    node₁ = c₁_constants[c]
-    node₂ = c₂_constants[c]
+    (node₁, node₂) = (c₁_constants[c], c₂_constants[c])
 
-    children₁ = v_children(node₁)
-    children₂ = v_children(node₂)
+    (children₁, children₂) = (v_children(node₁), v_children(node₂))
 
     #nodes with same symbol but different children count are different operations (unary vs binary -)
     length(children₁) == length(children₂) || continue
@@ -103,14 +75,12 @@ function eclass_intersect(g₁::EGraph, g₂::EGraph, c₁::EClass=g₁[g₁.roo
     end
 
     # else, for each child, recursively check if they have representations of that child that are equal
-    all_child_programs = Vector() # make an array. for each i, store the found programs
+    all_child_programs = Vector() # make an array. for each parameter, store the found programs
     for i in eachindex(children₁)
-      seen_child = copy(seen) # every recursion branch should have its own seen set
-      child₁ = children₁[i]
-      child₂ = children₂[i]
-      c_child₁ = g₁[child₁]
-      c_child₂ = g₂[child₂]
-      child_programs = eclass_intersect(g₁, g₂, c_child₁, c_child₂, seen_child)
+      seen_child = copy(seen) # every recursion branch should have its own seen set 
+      c_child₁ = g₁[children₁[i]]
+      c_child₂ = g₂[children₂[i]]
+      child_programs = eclass_intersect(g₁, g₂, c_child₁, c_child₂, seen_child, found)
       child_programs !== nothing || break
       push!(all_child_programs, child_programs)
     end
@@ -122,7 +92,6 @@ function eclass_intersect(g₁::EGraph, g₂::EGraph, c₁::EClass=g₁[g₁.roo
         # for each combination of parameters, make the total term and add to found_programs
         if v_iscall(node₁)
           p = maketerm(Expr, :call, [c; combination], nothing)
-          println(p)
         else
           p = maketerm(Expr, c, combination, nothing) #TODO do I need this?
         end
@@ -133,25 +102,13 @@ function eclass_intersect(g₁::EGraph, g₂::EGraph, c₁::EClass=g₁[g₁.roo
   end
 
   if isempty(found_programs)
-    return nothing
-  else
-    return found_programs
+    found_programs = nothing
   end
+  found[(c₁.id, c₂.id)] = found_programs
+  return found_programs
 end
 
 eclass_intersect(g₁, g₂)
-
-# f = @theory a b c begin
-#   0 --> :a - :a
-#   a --> a + 0
-#   a + (b - c) --> (a + b) - c
-#   a + a --> 2a
-#   a --> -5 # I literally say that everything can be rewritten to -5
-# end
-
-# h = EGraph(:(a-4))
-# saturate!(h, f)
-# h
 
 """
 Interstects any number of eclasses
@@ -159,10 +116,12 @@ Find equal operations in the eclasses
 If found, find equal expressions in the children
 Go on until all equal expressions are found
 """
-function eclass_intersect_many(gs::Vector{<:EGraph}, cs::Vector{<:EClass}=map(g -> g[g.root], gs), seen=Set{Vector{Id}}())
-
+function eclass_intersect_many(gs::Vector{<:EGraph}, cs::Vector{<:EClass}=map(g -> g[g.root], gs), seen=Set{Vector{Id}}(), found=Dict{Vector{Id},Union{Vector{Union{Symbol,Expr}},Nothing}}())
   ids = map(c -> c.id, cs)
+  # if the considered eclasses have already been seen together for this operator, we found a cycle and return nothing
   !in(ids, seen) || (return nothing)
+  # if the eclasses have already been intersected, return the result (improves efficiency)
+  haskey(found, ids) && (return found[ids])
   push!(seen, ids)
 
   c_constants = map((g,c) -> get_eclass_constants(g, c), gs, cs)
@@ -185,11 +144,10 @@ function eclass_intersect_many(gs::Vector{<:EGraph}, cs::Vector{<:EClass}=map(g 
     end
 
     # else, for each child, recursively check if they have representations of that child that are equal
-    all_child_programs = Vector() # make an array. for each i, store the found programs
+    all_child_programs = Vector() # make an array. for each parameter, store the found programs
     for i in eachindex(children[1])
       seen_child = copy(seen) # every recursion branch should have its own seen set
-      childs = map(child -> child[i], children)
-      c_childs = map((g,child) -> g[child], gs, childs)
+      c_childs = map((g,child) -> g[child[i]], gs, children)
       child_programs = eclass_intersect_many(gs, c_childs, seen_child)
       child_programs !== nothing || break
       push!(all_child_programs, child_programs)
@@ -201,7 +159,6 @@ function eclass_intersect_many(gs::Vector{<:EGraph}, cs::Vector{<:EClass}=map(g 
         # for each combination of parameters, make the total term and add to found_programs
         if v_iscall(nodes[1])
           p = maketerm(Expr, :call, [c; combination], nothing)
-          println(p)
         else
           p = maketerm(Expr, c, combination, nothing) #TODO do I need this?
         end
@@ -212,13 +169,10 @@ function eclass_intersect_many(gs::Vector{<:EGraph}, cs::Vector{<:EClass}=map(g 
   end
 
   if isempty(found_programs)
-    return nothing
-  else
-    return found_programs
+    found_programs = nothing
   end
+  found[ids] = found_programs
+  return found_programs
 end
 
 eclass_intersect_many([g₁, g₂])
-
-aap = EGraph(:(cond(true, a, -a)))
-saturate!(aap, t₁)
