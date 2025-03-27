@@ -14,10 +14,13 @@ using Metatheory.EGraphs
 #TODO Maybe dependent on the domain? For integers just Int, for the absolute function Union(Int,Bool) something like that?
 #TODO or does Symbol generally work as I can translate everything to it? If so, how?
 #TODO For Now Int is fine, but this should be changed to the actual output type of the domain or something general
-const CVecAnalysis = Vector{Int} # According to the paper, cvecs consist of only the output
+#const CVecAnalysis = Vector{Int} # According to the paper, cvecs consist of only the output
+const CVecAnalysis = Vector{Float64}
 
 #TODO this should probably become the number of IO examples per egraph???
-const N = 1 #The number of outputs in a cvec
+#const N = 1 #The number of outputs in a cvec
+#const N = 2
+const N = 5
 
 const proven_unequal = Set{Tuple{Id, Id}}() #A set of eclasses that have been proven unequal
 
@@ -27,7 +30,9 @@ In my case, this can directly be taken from the IO example(s) per EGraph.
 Meaning that this will just return the output(s) of the IO example(s) that correspond with an EGraph.
 """
 function variable_cvec()::CVecAnalysis
-    return [5] # the output of an IO example
+    #return [5] # the output of an IO example
+    #return [true, false]
+    return [0,1,2,3,4]
 end
 
 """
@@ -37,7 +42,7 @@ function equal_cvecs(a::CVecAnalysis, b::CVecAnalysis)::Bool
     all_equal = true
     at_least_one_equal = false
     for i in eachindex(a)
-        if a === nothing || b === nothing
+        if a[i] === nothing || b[i] === nothing || isnan(a[i]) || isnan(b[i])
             continue
         end
         if a[i] != b[i] #TODO maybe !==
@@ -97,16 +102,16 @@ end
 
 # EGraphs.modify! should not be required for cvecs. Maybe it could do something like add the canonical term
 
-#cvec tests:
-#test one, making singular and inductive cases
-expr = :(a+0)
-g = EGraph{Expr, CVecAnalysis}(:($expr))
-#test two, joining cvecs
-t = @theory a begin
-    a + 0 == a
-end
-saturate!(g, t)
-println(g)
+# #cvec tests:
+# #test one, making singular and inductive cases
+# expr = :(a+0)
+# g = EGraph{Expr, CVecAnalysis}(:($expr))
+# #test two, joining cvecs
+# t = @theory a begin
+#     a + 0 == a
+# end
+# saturate!(g, t)
+# println(g)
 
 """
 Adding terms to an egraph. Rudimentory implementation
@@ -114,14 +119,26 @@ Adding terms to an egraph. Rudimentory implementation
 function add_terms!(g::EGraph{ExprType, CVecAnalysis}, i) where {ExprType}
     #TODO maybe the root should be set?
 
+    # if i == 0
+    #     addexpr!(g, :(a))
+    #     addexpr!(g, 0)
+    # else
+    #     addexpr!(g, :(a+0))
+    # end
+    # if i == 0
+    #     addexpr!(g, :(a))
+    #     addexpr!(g, false)
+    # else i == 1
+    #     addexpr!(g, :(a ⊻ a))
+    #     addexpr!(g, :(a & false))
+    # end
     if i == 0
         addexpr!(g, :(a))
-        addexpr!(g, 0)
-    else
-        addexpr!(g, :(a+0))
+        addexpr!(g, 1)
+    else i == 1
+        addexpr!(g, :(a / a))
     end
 end
-
 """
 Returns a collection of rewrite rules from pairs of eclasses that have the same cvec.
 If two eclasses were seen before and proven unequal, the rule they form should not be in the output.
@@ -145,8 +162,12 @@ function cvec_match(g::EGraph{ExprType, CVecAnalysis}) where {ExprType}
                 #Therefore, I currently extract the smallest term. I could maybe append the concept to MT instead?
                 x_can = extract!(g, astsize, key_x.val)
                 y_can = extract!(g, astsize, key_y.val)
-                r = eval(:(@slots a @rule $x_can == $y_can))               
-                push!(C, r)
+                r₁ = eval(:(@slots a @rule $x_can --> $y_can))
+                r₂ = eval(:(@slots a @rule $y_can --> $x_can))
+                #errors for false == a xor a because a is not at the left side of the equation
+                #this should become    
+                push!(C, r₁)
+                push!(C, r₂)
             end
         end
     end
@@ -154,10 +175,10 @@ function cvec_match(g::EGraph{ExprType, CVecAnalysis}) where {ExprType}
     return C
 end
 
-#test cvec_match
-expr = :(a+0)
-g = EGraph{Expr, CVecAnalysis}(:($expr))
-println(cvec_match(g))
+# #test cvec_match
+# expr = :(a+0)
+# g = EGraph{Expr, CVecAnalysis}(:($expr))
+# println(cvec_match(g))
 
 """
 Saturate T based on R without polluting T with intermediate terms added during equality saturation.
@@ -218,16 +239,17 @@ function run_rewrites!(T::EGraph{ExprType, CVecAnalysis}, R::Vector{RewriteRule}
     # return components
 end
 
-#test run_rewrites!
-expr = :(a+0)
-g = EGraph{Expr, CVecAnalysis}(:($expr))
-t = @theory a begin
-    a + 0 == a
-end
-run_rewrites!(g, t)
-println(g)
+# #test run_rewrites!
+# expr = :(a+0)
+# g = EGraph{Expr, CVecAnalysis}(:($expr))
+# t = @theory a begin
+#     a + 0 == a
+# end
+# rules::Vector{RewriteRule} = [@slots a @rule a == a+0]
+# run_rewrites!(g, rules)
+# println(g)
 
-function shrink(R::Vector{RewriteRule}, C::Vector{RewriteRule}, ::Type{ExprType}) where {ExprType}
+function shrink(R::Vector{RewriteRule}, C::Vector{<:RewriteRule}, ::Type{ExprType}) where {ExprType}
     E = EGraph{ExprType, CVecAnalysis}() 
     classes_per_rule = []
     for r in C
@@ -241,13 +263,13 @@ function shrink(R::Vector{RewriteRule}, C::Vector{RewriteRule}, ::Type{ExprType}
     return [r for (i, r) in enumerate(C) if find(E, classes_per_rule[i][1]) != find(E, classes_per_rule[i][2])]
 end
 
-expr = :(a+0)
-g = EGraph{Expr, CVecAnalysis}(:($expr))
-rules = cvec_match(g)
-println(shrink(rules, rules, Expr))
+# expr = :(a+0)
+# g = EGraph{Expr, CVecAnalysis}(:($expr))
+# rules = cvec_match(g)
+# println(shrink(rules, rules, Expr))
 
 #TODO add heuristic for choosing the best rule
-function select!(step, C::Vector{RewriteRule})
+function select!(step, C::Vector{<:RewriteRule})
     # Ruler’s syntactic heuristic prefers candidates with the following characteristics (lexicographically): 
     # more distinct variables, fewer constants, shorter larger side (between the two terms forming the candidate), 
     # shorter smaller side, and fewer distinct operators.
@@ -261,8 +283,8 @@ function select!(step, C::Vector{RewriteRule})
     [pop!(C) for _ in 1:(min(step, length(C)))]
 end
 
-#test select!
-println(select!(1, cvec_match(g)))
+# #test select!
+# println(select!(1, cvec_match(g)))
 
 function is_valid(r::RewriteRule)
     #TODO potentially implement
@@ -316,4 +338,5 @@ function ruler(iterations, ::Type{ExprType}) where {ExprType}
     T,R
 end
 
-ruler(1, Expr)
+T,r = ruler(1, Expr)
+a = 5
