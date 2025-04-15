@@ -8,81 +8,13 @@ using HerbSpecification
 using HerbConstraints
 using HerbCore
 
+using IterTools
 
+include("termset.jl")
+include("intersect.jl")
 
-# Define the grammar
-const grammar = @csgrammar begin
-    Number = |(-10:10)
-    Number = x
-    Number = Number + Number
-    Number = Number - Number
-    Number = Number * Number
-end
-
-# Create input-output examples
-const examples = [[IOExample(Dict(:x => x), 4x + 6)] for x ∈ -10:10]
-
-const num_solutions_desired = 3
-solutions_per_example = []
-
-#TODO temporary; for now
-function contains_variable(expr::ExprType) where {ExprType}
-    if expr == :(x)
-        return true
-    elseif typeof(expr) == Expr 
-        for arg in expr.args
-            if arg == :(x)
-                return true
-            elseif typeof(arg) == Expr && contains_variable(arg)
-                return true
-            end
-        end
-    end
-    return false
-end
-
-# println(contains_variable(:x))
-# println(contains_variable(:b))
-# println(contains_variable(:(x+0)))
-# println(contains_variable(:(0+0)))
-# println(contains_variable(:(0+0+x)))
-# println(contains_variable(:(x+0+0)))
-# println(contains_variable(:(0+x+0)))
-
-
-for example in examples
-    found_solutions = []
-    symboltable :: SymbolTable = SymbolTable(grammar, Main)
-    problem = Problem("example", example)
-    for (i, candidate_program) ∈ enumerate(BFSIterator(grammar, :Number))
-        # Create expression from rulenode representation of AST
-        expr = rulenode2expr(candidate_program, grammar)
-    
-        # Evaluate the expression
-        score = HerbSearch.evaluate(problem, expr, symboltable)
-        if score == 1
-            expr = rulenode2expr(HerbConstraints.freeze_state(candidate_program),grammar)
-            if contains_variable(expr)
-                push!(found_solutions, expr)
-            end
-        end
-    
-        if length(found_solutions) >= num_solutions_desired
-            break
-        end
-    end
-    push!(solutions_per_example, found_solutions)
-end
-
-
-println("Solutions per example")
-for (i, example) in enumerate(examples)
-    println("Example $i")
-    for term in solutions_per_example[i]
-        println(term)
-    end
-end
-
+using .Termset
+using .Intersect
 
 
 
@@ -97,10 +29,6 @@ end
 #   - if still life energy, fix intersect and intersect them
 #- test the rewrite rules with a::Symbol
 #- tests?
-#- update presentation
-#   - made method and draft versions of the why and informal
-#   - ruler maannnnnyyyy bugs, both from me and MT, all found bugs fixed
-#   - things done tomorrow
 
 
 
@@ -341,7 +269,7 @@ function cvec_match(g::EGraph{ExprType, CVecAnalysis}) where {ExprType}
                 #TODO why does it try to extract 17 when I tell it to extract 7
                 
                 x_can = extract!(g, astsize, key_x.val)
-                println("extract $(key_y.val)")
+                #println("extract $(key_y.val)")
                 y_can = extract!(g, astsize, key_y.val)
 
                 if !contains_variable(x_can) && !contains_variable(y_can)
@@ -419,7 +347,7 @@ function run_rewrites!(T::EGraph{ExprType, CVecAnalysis}, R::Vector{<:RewriteRul
     # This avoids polluting the e-graph with terms added during equality saturation.
     for (initial, final) in enumerate(g.uf.parents)
         if initial != final && initial in initial_classes && final in initial_classes
-            println("merge $initial and $final")
+            #println("merge $initial and $final")
             Metatheory.EGraphs.union!(T, UInt(initial), UInt(final))
         end
     end
@@ -446,7 +374,7 @@ function shrink(R::Vector{<:RewriteRule}, C::Vector{<:RewriteRule}, ::Type{ExprT
     # TODO in the paper they return extract(E,c) instead of r. This should be fine too however, I dont think it matters much
     # For all rules, check whether its terms ended up in the same eclass
     result = [r for (i, r) in enumerate(C) if find(E, classes_per_rule[i][1]) != find(E, classes_per_rule[i][2])]
-    println(length(result) == length(C))
+    #println(length(result) == length(C))
     return result
 end
 
@@ -537,31 +465,71 @@ function ruler(iterations, ::Type{ExprType}) where {ExprType}
     T,R
 end
 
-all_rules = []
-all_graphs = []
-
-for i in -10:10
-    global current_input = i #TODO this might be quite inefficient
-    T,R = ruler(1, Expr)
-    push!(all_rules, R) 
-    push!(all_graphs, T)
-    #TODO from T, find the class with the cvec equal to the output
-    #TODO then, extract each term represented by the class (very similar to intersect)
-    #TODO add those terms to an egraph and add that egraph to all_graphs
-    #TODO or just directly run R on that graph and just save that
-end
-
-
-
-
-
-
-
-
-
 #I can add the rule of insertion by hand
 #T,R = ruler(1, Expr)
 # R = R ∪ @slots a @rule a::Symbol --> -5
 # papa = EGraph{Expr,CVecAnalysis}(:(a-4))
 # saturate!(papa,R)
 # println(papa)
+
+
+
+
+
+
+
+
+
+
+
+
+all_rules = []
+
+for i in -10:10
+    println("Find rules for input $i")
+
+    global current_input = i #TODO this might be quite inefficient
+    T,R = ruler(1, Expr)
+    push!(all_rules, R)
+
+    println("Found $(length(R)) rules for input $i")
+
+
+    #TODO in case we are gonna use a collection of small terms instead of a collection of solutions
+    #TODO from T, find the class with the cvec equal to the output
+    #TODO then, extract each term represented by the class (very similar to intersect) and add those terms to an egraph
+    #TODO more efficient: make a subgraph using the eclass and all classes that it uses reversively 
+    #TODO add that egraph to all_graphs
+end
+
+all_graphs::Vector{EGraph{Expr,CVecAnalysis}} = []
+
+for (i,solutions) in enumerate(solutions_per_example)
+    example_input = i - 11
+    println("Find solutions for input $example_input")
+
+    global current_input = example_input
+    G = EGraph{Expr,CVecAnalysis}()
+    for term in solutions
+        addexpr!(G, term)
+    end
+    saturate!(G,all_rules[i])
+    push!(all_graphs, G)
+    #rebuild!(G)
+
+    println("Found soltutions for input $example_input")
+end
+
+eclasses::Vector{EClass{CVecAnalysis}} = []
+
+for (i,graph) in enumerate(all_graphs)
+    for (_,class) in graph.classes
+        if class.data[1] == examples[i][1].out
+            push!(eclasses, class)
+            break
+        end
+    end
+end
+
+println(eclass_intersect_many(all_graphs, eclasses))
+

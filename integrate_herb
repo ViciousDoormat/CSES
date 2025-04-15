@@ -1,0 +1,58 @@
+using Metatheory, Metatheory.EGraphs
+using TermInterface
+using HerbCore, HerbGrammar, HerbSearch
+
+#Integrating Herb has following potentials:
+# No symbol weirdness
+# Holes to represent any program
+
+TermInterface.isexpr(::RuleNode) = true
+TermInterface.iscall(::RuleNode) = true
+TermInterface.head(e::RuleNode) = e.ind
+TermInterface.children(e::RuleNode) = e.children
+TermInterface.operation(e::RuleNode) = e.ind #TODO ????
+TermInterface.arguments(e::RuleNode) = e.children
+TermInterface.metadata(e::RuleNode) = e._val
+TermInterface.maketerm(::Type{RuleNode}, h, c, metadata) = RuleNode(h, metadata, c)
+
+println(Expr(:call, 1))
+
+r = @theory a b begin
+   #Rulenode(7, nothing, [a, b]) == Rulenode(7, nothing, [b, a])
+   #7{a, b} == 7{b, a}
+   #(7)(a, b) == (7)(b, a)
+   #RuleNode(1) == :($(QuoteNode(RuleNode(2))))
+   #1 == 2
+   #a --> RuleNode(1)
+   #(1)() --> :aap
+   a => :($(Expr(:call, 7, Expr(:call, 1), Expr(:call, 1)))) #TODO RHS is the correct structure
+   #Expr(:call, 1) --> :aap #TODO but it does not match the left side
+   #Expr(a, b) --> :aap
+end
+
+g = EGraph{RuleNode}(RuleNode(7, nothing, [RuleNode(1),RuleNode(2)]))
+println(g)
+saturate!(g,r)
+g
+
+# ExprWithContext(head, args) = ExprWithContext(head, args, nothing)
+# ExprWithContext(head) = ExprWithContext(head, [])
+
+# function Base.:(==)(a::ExprWithContext, b::ExprWithContext)
+#     #TODO Maybe define the equality (needs to be defined according to guide) as being equal when equal modulo context!!!
+#     a.head == b.head && a.args == b.args && a.context == b.context
+# end
+
+# TermInterface.isexpr(::ExprWithContext) = true
+# TermInterface.iscall(::ExprWithContext) = true
+# TermInterface.head(e::ExprWithContext) = e.head
+# TermInterface.children(e::ExprWithContext) = e.args
+
+# #this is true if this defined expression always represents function calls. TODO is that true?
+# TermInterface.operation(e::ExprWithContext) = head(e)
+# TermInterface.arguments(e::ExprWithContext) = children(e)
+
+# #commented out in example. why?
+# TermInterface.metadata(e::ExprWithContext) = e.context
+
+# TermInterface.maketerm(::Type{ExprWithContext}, h, c, metadata) = ExprWithContext(h, c, metadata)
