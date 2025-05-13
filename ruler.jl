@@ -11,7 +11,7 @@ include("helper_functions.jl")
 using .Helper
 
 # Characteristic vectors over E-Graphs implemented as an E-Graph Analysis
-const CVecAnalysis = Vector{Int} 
+CVecAnalysis = Vector{Int} #TODO How can I parametreize this? functions from MT I dont directly call depend on it and are defined in this module
 const N = 1 # The number of outputs in a cvec
 
 """
@@ -289,6 +289,8 @@ end
 Find the minimal set of rewrite rules that can prove all equalities in a term set T
 """
 function ruler(iterations, D::Dict{Int, Vector{Union{Int64, ExprType, Symbol}}}, ::Type{ExprType}) where {ExprType}
+
+    println(variable_cvec())
     # Start with an empty E-Graph and no rewrite rules
     T = EGraph{ExprType, CVecAnalysis}() 
     R::Vector{RewriteRule} = []
@@ -326,15 +328,16 @@ end
 
 end
 
-module Test
-using ..Ruler
+# module Test
+# using ..Ruler
 
-for i in 1:3
-    #In my case, this can directly be taken from the IO example(s) per EGraph.
-    #Meaning that this will just return the output(s) of the IO example(s) that correspond with an EGraph.
-    Ruler.variable_cvec = () -> [i]
-    D::Dict{Int, Vector{Union{Int64, Expr, Symbol}}} = Dict(0 => [:(x), 1, 0], 1 => [:(x + 0), :(x + 1)])
-    ruler(1, D, Expr)
-end
+# for i in 1:3
+#     #In my case, this can directly be taken from the IO example(s) per EGraph.
+#     #Meaning that this will just return the output(s) of the IO example(s) that correspond with an EGraph.
+#     Ruler.variable_cvec = () -> [i]
+#     Ruler.CVecAnalysis = Vector{Int} 
+#     D::Dict{Int, Vector{Union{Int64, Expr, Symbol}}} = Dict(0 => [:(x), 1, 0], 1 => [:(x + 0), :(x + 1)])
+#     ruler(1, D, Expr)
+# end
 
-end
+# end

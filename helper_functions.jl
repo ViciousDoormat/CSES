@@ -30,18 +30,19 @@ function count_operators(e::Union{Int64, ExprType, Symbol})::Int where {ExprType
     return count
 end
 
-function group_by_operator_count(terms::Set{Union{Int64, ExprType, Symbol}})::Dict{Int, Vector{Union{Int64, ExprType, Symbol}}} where {ExprType}
+function group_by_operator_count(terms::Set{Union{Int64, ExprType, Symbol}})::Tuple{Dict{Int, Vector{Union{Int64, ExprType, Symbol}}}, Int} where {ExprType}
     grouped = Dict{Int, Vector{Union{Int64, ExprType, Symbol}}}()
+    max_count = 0
     for term in terms
         count = count_operators(term)
         if haskey(grouped, count)
             push!(grouped[count], term)
         else
-            global max_operator_count = max(max_operator_count, count)
+            max_count = max(max_count, count)
             grouped[count] = [term]
         end
     end
-    return grouped
+    return grouped, max_count
 end
 
 function replace_with_symbol(e::ExprType) where {ExprType}

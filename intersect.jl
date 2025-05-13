@@ -6,6 +6,8 @@ using Metatheory.Library
 using Metatheory.EGraphs
 using IterTools
 
+using Infiltrator
+
 t₁ = @theory a begin
   true --> :a ≥ :zero
   a --> cond(true, a, -a)
@@ -185,6 +187,7 @@ function eclass_intersect_many(gs::Vector{<:EGraph}, cs::Vector{<:EClass}=map(g 
     found_programs = nothing
   end
   found[ids] = found_programs
+  println("found programs: ", found_programs)
   return found_programs
 end
 
