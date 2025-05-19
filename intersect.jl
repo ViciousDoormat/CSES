@@ -130,7 +130,18 @@ function eclass_intersect_many(gs::Vector{<:EGraph}, cs::Vector{<:EClass}=map(g 
   
   ids = map(c -> c.id, cs) #BoundsError: attempt to access 22-element Vector{UInt64} at index [0]. bug: class 0 does not exist, but root is 0
   # if the considered eclasses have already been seen together for this operator, we found a cycle and return nothing
-  !in(ids, seen) || (return nothing)
+  if in(ids, seen)
+    #TODO here, we are back at a point that we already have seen
+    #TODO we came here with some sequence of operators
+    #TODO say that we are back where we were, 
+    #TODO and that, at the point where we started from here, we can apply those operators to the other programs found
+    #TODO example: (x)<--A--(-)-->B--(-)-->A
+    #TODO take the root from A to B with - and from B to a with -. Now we are here
+    #TODO 1) in A, return already_seen(ids), now back at B
+    #TODO 2) in B, return -already_seen(ids), now back at A
+    #TODO 3) in A, we see that this.ids == ids, so we create map(x -> (-(-(x)), [x]) where [x] here is the list of other final found programs
+    #TODO to tired now, but something like this must also happen in B to find -x
+  end
   # if the eclasses have already been intersected, return the result (improves efficiency)
   haskey(found, ids) && (return found[ids])
   #println("seen: ", seen, " ids: ", ids)
