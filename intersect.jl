@@ -61,7 +61,6 @@ function eclass_intersect(g₁::EGraph, g₂::EGraph, c₁::EClass=g₁[g₁.roo
   push!(seen, (c₁.id, c₂.id))
   c₁_constants_to_nodes = get_eclass_constants(g₁, c₁)
   c₂_constants_to_nodes = get_eclass_constants(g₂, c₂)
-
   common_constants = intersect(Set{Union{Symbol,Int,Bool}}(collect(keys(c₁_constants_to_nodes))), Set{Union{Symbol,Int,Bool}}(collect(keys(c₂_constants_to_nodes))))
 
   # define set of extracted programs
@@ -95,6 +94,7 @@ function eclass_intersect(g₁::EGraph, g₂::EGraph, c₁::EClass=g₁[g₁.roo
 
       if length(all_child_programs) == length(children₁)
         combinations = collect.(collect(IterTools.product(all_child_programs...)))
+        println(combinations)
         #combinations = [collect(c) for c in combinations] #TODO why doest make vectors automatically?
         for combination in combinations
           # for each combination of parameters, make the total term and add to found_programs
@@ -133,6 +133,7 @@ function eclass_intersect_many(gs::Vector{<:EGraph}, cs::Vector{<:EClass}=map(g 
   !in(ids, seen) || (return nothing)
   # if the eclasses have already been intersected, return the result (improves efficiency)
   haskey(found, ids) && (return found[ids])
+  #println("seen: ", seen, " ids: ", ids)
   push!(seen, ids)
 
   c_constants_to_nodes = map((g,c) -> get_eclass_constants(g, c), gs, cs)
@@ -161,7 +162,7 @@ function eclass_intersect_many(gs::Vector{<:EGraph}, cs::Vector{<:EClass}=map(g 
       for i in eachindex(children[1])
         seen_child = copy(seen) # every recursion branch should have its own seen set
         c_childs = map((g,child) -> g[child[i]], gs, children)
-        child_programs = eclass_intersect_many(gs, c_childs, seen_child)
+        child_programs = eclass_intersect_many(gs, c_childs, seen_child, found) #TODO now I do pass found allong. check
         child_programs !== nothing || break
         push!(all_child_programs, child_programs)
       end
@@ -187,7 +188,7 @@ function eclass_intersect_many(gs::Vector{<:EGraph}, cs::Vector{<:EClass}=map(g 
     found_programs = nothing
   end
   found[ids] = found_programs
-  println("found programs: ", found_programs)
+  #println("found programs: ", found_programs)
   return found_programs
 end
 

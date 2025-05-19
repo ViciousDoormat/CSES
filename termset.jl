@@ -1,6 +1,6 @@
 module Termset
 
-export create_termset #TODO
+export create_termset
 
 using HerbSearch
 using HerbGrammar
