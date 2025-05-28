@@ -30,7 +30,7 @@ using Infiltrator
 
 #TODO test the rewrite rules with a::Symbol and write tests
 
-function solve(examples, grammar, grammar_root, variable, ::Type{AllTypes}, num_solutions=1, up_to_size=3) where {AllTypes}
+function solve(examples, grammar, grammar_root, variable, ::Type{AllTypes}, ::Type{CVec}, num_solutions=1, up_to_size=3) where {AllTypes, CVec}
     println("create termset")
     ungrouped_termset, solutions_per_example = create_termset(examples, grammar, grammar_root, variable, AllTypes, num_solutions, up_to_size)
 
@@ -53,7 +53,8 @@ function solve(examples, grammar, grammar_root, variable, ::Type{AllTypes}, num_
     
         Ruler.variable_cvec = () -> [i]
         println(Ruler.variable_cvec())
-        T,R = ruler(max_operator_count, grouped_termset, variable)
+        T,R = ruler(max_operator_count, grouped_termset, variable, CVec)
+        R = reduce(vcat, R)
         all_rules[i] = R
     
         println("Found $(length(R)) rules for input $i")
@@ -145,7 +146,7 @@ for (i, pair) in enumerate(pairs)
     g = pair.grammar
     examples = map(example -> [example], pair.problem.spec)
     
-    solution = Solve.solve(examples, g, :Start, :_arg_1, Union{UInt, Expr, Symbol}, 1, 2)
+    solution = Solve.solve(examples, g, :Start, :_arg_1, Union{UInt, Expr, Symbol}, UInt, 1, 3)
 
 
     if !isnothing(solution)

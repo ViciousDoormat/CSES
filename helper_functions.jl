@@ -1,6 +1,6 @@
 module Helper
 
-export contains_variable, count_operators, group_by_operator_count, replace_with_symbol, replace_back_to_expr, add_symbol_type, remove_symbol_type
+export contains_variable, count_operators, group_by_operator_count, replace_with_symbol, replace_back_to_expr, add_symbol_type, remove_symbol_type, loading_bar
 export bvneg_cvc, bvnot_cvc, bvadd_cvc, bvsub_cvc, bvxor_cvc, bvand_cvc, bvor_cvc, bvshl_cvc, bvlshr_cvc, bvashr_cvc, bvnand_cvc
 export bvnor_cvc, ehad_cvc, arba_cvc, shesh_cvc, smol_cvc, im_cvc, if0_cvc
 
@@ -18,19 +18,6 @@ function contains_variable(expr, variable)
     end
     return false
 end
-
-# println(contains_variable(:x,:x))
-# println(contains_variable(:(x+1),:x))
-# println(contains_variable(:(1+x),:x))
-# println(contains_variable(:(x+y),:x))
-# println(contains_variable(:(x+x),:x))
-# println(!contains_variable(:(y+1),:x))
-# println(!contains_variable(:(1),:x))
-# println(contains_variable(:(1+1+x),:x))
-# println(contains_variable(:(x+1+1),:x))
-# println(contains_variable(:(1+x+1),:x))
-# println(!contains_variable(:(1+1+1),:x))
-
 
 function count_operators(e::Union{AllTypes})::Int where {AllTypes}
     count = 0
@@ -63,11 +50,11 @@ end
 function replace_with_symbol(e, variable)
     expr = deepcopy(e)
     if expr == variable
-        return :($variable)
+        return :($(QuoteNode(variable)))
     elseif typeof(expr) == Expr 
         for (i,arg) in enumerate(expr.args)
             if arg == variable
-                expr.args[i] = :($variable)
+                expr.args[i] = :($(QuoteNode(variable)))
             elseif typeof(arg) == Expr
                 expr.args[i] = replace_with_symbol(arg, variable)
             end
@@ -78,11 +65,11 @@ end
 
 function replace_back_to_expr(e, variable)
     expr = deepcopy(e)
-    if expr == :($variable)
+    if expr == :($(QuoteNode(variable)))
         return variable
     elseif typeof(expr) == Expr 
         for (i,arg) in enumerate(expr.args)
-            if arg == :($variable)
+            if arg == :($(QuoteNode(variable)))
                 expr.args[i] = variable
             elseif typeof(arg) == Expr
                 expr.args[i] = replace_back_to_expr(arg, variable)
@@ -108,27 +95,14 @@ function add_symbol_type(e, variable)
     return expr
 end
 
-
-
-# println("add_symbol_type")
-# println(add_symbol_type(:x,:x))
-# println(add_symbol_type(:y,:x))
-# println(add_symbol_type(1,:x))
-# println(add_symbol_type(:(x+1),:x))
-# println(add_symbol_type(:(1+x),:x))
-# println(add_symbol_type(:(1+1),:x))
-# println(add_symbol_type(:(1+1+1),:x))
-# println(add_symbol_type(:(1+1+x),:x))
-
-
 function remove_symbol_type(e, variable)
     expr = deepcopy(e)
     if expr == :($(variable)::Symbol)
-        return :(x)
+        return variable
     elseif typeof(expr) == Expr 
         for (i,arg) in enumerate(expr.args)
             if arg == :($(variable)::Symbol)
-                expr.args[i] = :(x)
+                expr.args[i] = variable
             elseif typeof(arg) == Expr
                 expr.args[i] = remove_symbol_type(arg,variable)
             end
@@ -136,16 +110,6 @@ function remove_symbol_type(e, variable)
     end
     return expr
 end
-
-# println("remove_symbol_type")
-# println(remove_symbol_type(add_symbol_type(:x, :x),:x))
-# println(remove_symbol_type(add_symbol_type(:y, :x),:x))
-# println(remove_symbol_type(add_symbol_type(1, :x),:x))
-# println(remove_symbol_type(add_symbol_type(:(x+1), :x),:x))
-# println(remove_symbol_type(add_symbol_type(:(1+x), :x),:x))
-# println(remove_symbol_type(add_symbol_type(:(1+1), :x),:x))
-# println(remove_symbol_type(add_symbol_type(:(1+1+1), :x),:x))
-# println(remove_symbol_type(add_symbol_type(:(1+1+x), :x),:x))
 
 bvneg_cvc(n::UInt) = -n
 bvnot_cvc(n::UInt) = ~n
@@ -169,4 +133,14 @@ smol_cvc(n::UInt) = bvshl_cvc(n, 1)
 im_cvc(x::UInt, y::UInt, z::UInt) = x == UInt(1) ? y : z
 if0_cvc(x::UInt, y::UInt, z::UInt) = x == UInt(0) ? y : z
 
+function loading_bar(current, max)
+    progress = round(Int, current / max * 50)  # 50 chars wide
+    bar = "[" * repeat("=", progress) * repeat(" ", 50 - progress) * "]"
+    print("\rProgress: ", bar)
 end
+
+end
+
+#run it on the string benchmark 
+#use futures in Julia or do it on the terminal level
+#limit the programs you intersect in the intersection 

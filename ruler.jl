@@ -10,8 +10,6 @@ include("helper_functions.jl")
 
 using .Helper
 
-# Characteristic vectors over E-Graphs implemented as an E-Graph Analysis
-CVecAnalysis = Vector{UInt} #TODO How can I parametreize this? functions from MT I dont directly call depend on it and are defined in this module
 const N = 1 # The number of outputs in a cvec
 
 """
@@ -23,7 +21,7 @@ variable_cvec = nothing
 """
 Two cvecs match when all, and at least one, non-nothing elements are equal.
 """
-function equal_cvecs(a::CVecAnalysis, b::CVecAnalysis)::Bool
+function equal_cvecs(a::Vector{CVec}, b::Vector{CVec})::Bool where {CVec}
     all_equal = true
     at_least_one_equal = false
     for i in eachindex(a)
@@ -46,17 +44,14 @@ When the term of the eclass is a constant, return N copies of that constant.
 When the term of the eclass is a function call f(c1, c2, ..., cn), return map(f, zip(v1, v2, ..., vn)).
 When the term of the eclass is a variable x, return N values from the target domain (randomly or in some specific way).
 """
-function EGraphs.make(g::EGraph{Expr, CVecAnalysis}, n::VecExpr)::CVecAnalysis
+function EGraphs.make(g::EGraph{Expr, Vector{CVec}}, n::VecExpr)::Vector{CVec} where {CVec}
     # This is the first element of a new eclass.
     op = get_constant(g, v_head(n)) 
     
     if !v_isexpr(n)
         # When t꜀ is a variable x, return N values from the target domain (randomly or in some specific way)
         if typeof(op) == Symbol
-            return variable_cvec() 
-            #TODO the problem: this is a function from MT I override. 
-            #TODO what I want is that this function variable_cvec gets redefined for each input
-            #TODO but then I have to redefine the global function, or can make this function such that I can pass it to it
+            return variable_cvec()
         end
         # When t꜀ is a constant n, return N copies of n
         return fill(op, N)
@@ -75,7 +70,15 @@ function EGraphs.make(g::EGraph{Expr, CVecAnalysis}, n::VecExpr)::CVecAnalysis
 
         return cvec
     else
-        error("Unknown term type")
+        children_cvecs = map(c -> g[c].data, v_children(n))
+
+        # n gets called in all these ways
+        parameter_possibilities = zip(children_cvecs...)
+
+        # Call op, that represents n, in all those ways
+        cvec = map(params -> eval(maketerm(Expr, op, params, nothing)), parameter_possibilities)
+
+        return cvec
     end
 end
 
@@ -84,7 +87,7 @@ Join the cvecs of two merging eclasses.
 """
 # TODO how should this actually be done? If they match, but a has nothings that b does not have and vice versa, what should be done?
 # TODO should the nothing or non-nothing values be chosen
-function EGraphs.join(a::CVecAnalysis, b::CVecAnalysis)::CVecAnalysis
+function EGraphs.join(a::Vector{CVec}, b::Vector{CVec})::Vector{CVec} where {CVec}
     equal_cvecs(a,b) || error("Cannot join different cvecs $a and $b")
     a 
 end
@@ -106,20 +109,40 @@ end
 # A global set of eclasses that have been proven unequal
 const proven_unequal = Set{Tuple{Id, Id}}() 
 
-#TODO move to helper function module
-max_operator_count = 1
-
 """
 Adding terms to an egraph. Add the ith terms from D to E-Graph g
 """
-function add_terms!(g::EGraph{Expr, CVecAnalysis}, D::Dict{Int, Vector{AllTypes}}, i) where {AllTypes}
-    # TODO maybe the root should be set?
-
+function add_terms!(g::EGraph{Expr, Vector{CVec}}, D::Dict{Int, Vector{AllTypes}}, i) where {AllTypes, CVec}
     if  haskey(D, i)
         for term in D[i]
             addexpr!(g, term)
-            println("added $term")
+            #println("added $term")
         end
+    end
+end
+
+function create_rewrite_rule(x_can, y_can, variable)::Vector{RewriteRule}
+    if !contains_variable(x_can,variable) && !contains_variable(y_can,variable)
+        r = eval(:(@slots $variable @rule $x_can == $y_can))
+        return [r]
+    elseif !contains_variable(x_can,variable)
+        y_can_replaced = replace_with_symbol(y_can,variable)
+        r = eval(:(@slots $variable @rule $x_can == $y_can_replaced))
+        return [r]
+    elseif !contains_variable(y_can,variable)
+        x_can_replaced = replace_with_symbol(x_can,variable)
+        r = eval(:(@slots $variable @rule $y_can == $x_can_replaced))
+        return [r]
+    else
+        x_with_symbol = add_symbol_type(x_can,variable)
+        y_with_symbol = add_symbol_type(y_can,variable)
+        x_can_replaced = replace_with_symbol(x_can,variable)
+        y_can_replaced = replace_with_symbol(y_can,variable)
+        
+        r₁ = eval(:(@slots $variable @rule $x_with_symbol --> $y_can_replaced))
+        r₂ = eval(:(@slots $variable @rule $y_with_symbol --> $x_can_replaced))
+        
+        return [r₁, r₂]
     end
 end
 
@@ -128,52 +151,28 @@ end
 Returns a collection of rewrite rules from pairs of eclasses that have the same cvec.
 If two eclasses were seen before and proven unequal, the rule they form should not be in the output.
 """
-function cvec_match(g::EGraph{Expr, CVecAnalysis}, variable)
+function cvec_match(g::EGraph{Expr, Vector{CVec}}, variable::Symbol, ::Type{CVec})::Vector{Vector{RewriteRule}} where {CVec}
     eclasses = g.classes
     # All candidate rules found
-    C::Vector{RewriteRule} = []
+    C::Vector{Vector{RewriteRule}} = []
 
     ids = collect(keys(eclasses))
-    println(length(ids))
 
     for i in 1:(length(ids)-1)
-        println("i: $i")
+        loading_bar(i, length(ids))#println("\ri: $i")
         key_x = ids[i]
-        x::CVecAnalysis = eclasses[key_x].data
+        x::Vector{CVec} = eclasses[key_x].data
 
         for j in (i+1):length(ids)
             key_y = ids[j]   
-            y::CVecAnalysis = eclasses[key_y].data
+            y::Vector{CVec} = eclasses[key_y].data
             if equal_cvecs(x, y) && (key_x.val, key_y.val) ∉ proven_unequal
                 #TODO why does it try to extract 17 when I tell it to extract 7
                 
                 x_can = extract!(g, astsize, key_x.val)
                 y_can = extract!(g, astsize, key_y.val)
 
-                if !contains_variable(x_can,variable) && !contains_variable(y_can,variable)
-                    r = eval(:(@slots $variable @rule $x_can == $y_can))
-                    push!(C, r)
-                elseif !contains_variable(x_can,variable)
-                    y_can_replaced = replace_with_symbol(y_can,variable)
-                    r = eval(:(@slots $variable @rule $x_can == $y_can_replaced))
-                    push!(C, r)
-                elseif !contains_variable(y_can,variable)
-                    x_can_replaced = replace_with_symbol(x_can,variable)
-                    r = eval(:(@slots $variable @rule $y_can == $x_can_replaced))
-                    push!(C, r)
-                else
-                    x_with_symbol = add_symbol_type(x_can,variable)
-                    y_with_symbol = add_symbol_type(y_can,variable)
-                    x_can_replaced = replace_with_symbol(x_can,variable)
-                    y_can_replaced = replace_with_symbol(y_can,variable)
-                    
-                    #TODO for some reason a::Symbol == :a does not work. Maybe test now that rebuild! is used?
-                    r₁ = eval(:(@slots $variable @rule $x_with_symbol --> $y_can_replaced))
-                    r₂ = eval(:(@slots $variable @rule $y_with_symbol --> $x_can_replaced))
-                    
-                    push!(C, r₁)
-                    push!(C, r₂)
-                end
+                push!(C, create_rewrite_rule(x_can, y_can, variable))
             end
         end
     end
@@ -184,7 +183,7 @@ end
 """
 Saturate T based on R without polluting T with intermediate terms added during equality saturation.
 """
-function run_rewrites!(T::EGraph{Expr, CVecAnalysis}, R::Vector{<:RewriteRule})
+function run_rewrites!(T::EGraph{Expr, Vector{CVec}}, R::Vector{RewriteRule}) where {CVec}
     # To ensure that run_rewrites only shrinks the term e-graph, Ruler performs this equality
     # saturation on a copy of the e-graph
     g = deepcopy(T)
@@ -195,6 +194,7 @@ function run_rewrites!(T::EGraph{Expr, CVecAnalysis}, R::Vector{<:RewriteRule})
     # It then copies the newly learned equalities (e-class merges) back to the original e-graph. 
     # This avoids polluting the e-graph with terms added during equality saturation.
     for (initial, final) in enumerate(g.uf.parents)
+        final = find(g, final)
         if initial != final && initial in initial_classes && final in initial_classes
             #println("merge $initial and $final")
             Metatheory.EGraphs.union!(T, UInt(initial), UInt(final))
@@ -208,10 +208,11 @@ end
 Remove rules from C that can be proven by the rules in R
 If the left and right part of a rewrite rule in C end up in the same eclass after saturation by R
 """
-function shrink(R::Vector{<:RewriteRule}, C::Vector{<:RewriteRule}, variable)
-    E = EGraph{Expr, CVecAnalysis}() 
+function shrink(R::Vector{RewriteRule}, C::Vector{Vector{RewriteRule}}, variable, ::Type{CVec}) where {CVec}
+    E = EGraph{Expr, Vector{CVec}}() 
     classes_per_rule = []
-    for r in C
+    for rs in C
+        r = rs[1]
         # For each rule, add the terms that form it to E
         left_id = addexpr!(E, remove_symbol_type(r.lhs_original,variable))
         right_id = addexpr!(E, replace_back_to_expr(r.rhs_original,variable))
@@ -220,9 +221,17 @@ function shrink(R::Vector{<:RewriteRule}, C::Vector{<:RewriteRule}, variable)
     end
     run_rewrites!(E, R)
 
-    # TODO in the paper they return extract(E,c) instead of r. This should be fine too however, I dont think it matters much
     # For all rules, check whether its terms ended up in the same eclass
-    result = [r for (i, r) in enumerate(C) if find(E, classes_per_rule[i][1]) != find(E, classes_per_rule[i][2])]
+    result::Vector{Vector{RewriteRule}} = []
+    for (i,_) in enumerate(C)
+        lhs = find(E, classes_per_rule[i][1])
+        rhs = find(E, classes_per_rule[i][2])
+        if (lhs != rhs)
+            rule = create_rewrite_rule(extract!(E,astsize,lhs),extract!(E,astsize,rhs),variable)
+            push!(result, rule)
+        end
+    end
+
     return result
 end
 
@@ -234,7 +243,7 @@ end
 Select step best rules from C according to a heurstic.
 Currently no heuristic implemented; first step rules are chosen.
 """
-function select!(step, C::Vector{<:RewriteRule})
+function select!(step, C::Vector{Vector{RewriteRule}})
     [pop!(C) for _ in 1:(min(step, length(C)))]
 end
 
@@ -242,7 +251,7 @@ end
 Makes sure that the rewrite rule r is valid.
 That the left and right part of r are indeed behaviorally equal.
 """
-function is_valid(r::RewriteRule)
+function is_valid(r::Vector{RewriteRule})
     #TODO potentially implement
     true
 end
@@ -251,8 +260,8 @@ end
 Keep selecting step rules from C until C gets empty or n rules are chosen
 Makes sure to not choose superfluous rules by shrinking C with the rules chosen 
 """
-function choose_eqs_n(R::Vector{<:RewriteRule}, C::Vector{<:RewriteRule}, n, step, variable)
-    K::Vector{RewriteRule} = []
+function choose_eqs_n(R::Vector{Vector{RewriteRule}}, C::Vector{Vector{RewriteRule}}, n, step, variable, ::Type{CVec})::Vector{Vector{RewriteRule}} where {CVec}
+    K::Vector{Vector{RewriteRule}} = []
         while !isempty(C)
             selection = select!(step, C)
             best = filter(is_valid, selection)
@@ -268,7 +277,7 @@ function choose_eqs_n(R::Vector{<:RewriteRule}, C::Vector{<:RewriteRule}, n, ste
                 return K[1:n]
             end
             # Shrink C with the kind of arbitrary set K until all rules in C are seen
-            C = shrink(R ∪ K, C, variable)
+            C = shrink(reduce(vcat, R ∪ K), C, variable, CVec)
         end
     return K
 end
@@ -277,10 +286,10 @@ end
 Select the "best" set of rules from the candidate set C
 If n=Inf, the minimal set of rules that, together with the already found rules, can prove all other valid rules
 """
-function choose_eqs(R::Vector{<:RewriteRule}, C::Vector{<:RewriteRule}, variable, n=Inf)
-    for step in 100:-10:1 # TODO why this arbitrary iteration system
+function choose_eqs(R::Vector{Vector{RewriteRule}}, C::Vector{Vector{RewriteRule}}, variable, ::Type{CVec}, n=Inf)::Vector{Vector{RewriteRule}} where {CVec}
+    for step in 101:-10:1 # TODO why this arbitrary iteration system
         if step ≤ n
-            C = choose_eqs_n(R, C, n, step, variable)
+            C = choose_eqs_n(R::Vector{Vector{RewriteRule}}, C::Vector{Vector{RewriteRule}}, n, step, variable, CVec)
         end
     end
     return C
@@ -289,12 +298,10 @@ end
 """
 Find the minimal set of rewrite rules that can prove all equalities in a term set T
 """
-function ruler(iterations, D::Dict{Int, Vector{AllTypes}}, variable) where {AllTypes}
-
-    println(variable_cvec())
+function ruler(iterations::Int, D::Dict{Int, Vector{AllTypes}}, variable::Symbol, ::Type{CVec}) where {AllTypes, CVec}
     # Start with an empty E-Graph and no rewrite rules
-    T = EGraph{Expr, CVecAnalysis}() 
-    R::Vector{RewriteRule} = []
+    T = EGraph{Expr, Vector{CVec}}() 
+    R::Vector{Vector{RewriteRule}} = []
 
     for i in 0:iterations
         println("Iteration $i of $iterations, add terms to T")
@@ -304,22 +311,22 @@ function ruler(iterations, D::Dict{Int, Vector{AllTypes}}, variable) where {AllT
         println("Added terms to T, run cvec_match")
 
         # Find all candidate rewrite rules in T
-        C::Vector{RewriteRule} = cvec_match(T, variable)
+        C::Vector{Vector{RewriteRule}} = cvec_match(T, variable, CVec)
 
         println("Found $(length(C)) candidate rules")
 
         # Select the best rules from the candidate set
         while !isempty(C)
             # Add a batch of found best rules from C to R
-            union!(R, choose_eqs(R, C, variable))
+            union!(R, choose_eqs(R, C, variable, CVec))
             println("Found $(length(R)) rules, run them on T")
 
             # Update T with R, guarantees the selected rules will not be considered again
-            run_rewrites!(T, R)
+            run_rewrites!(T, reduce(vcat, R))
             println("Run cvec_match again")
 
             # Update C
-            C = cvec_match(T, variable)
+            C = cvec_match(T, variable, CVec)
             println("Found $(length(C)) candidate rules")
         end
     end

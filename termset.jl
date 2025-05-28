@@ -16,7 +16,7 @@ include("helper_functions.jl")
 
 using .Helper
 
-function find_individual_solution(problem, grammar, grammar_root, num_solutions, symboltable, variable=:x)
+function find_individual_solution(problem, grammar, grammar_root, num_solutions, symboltable, variable)
     found_solutions = []
     
     for candidate_program ∈ BFSIterator(grammar, grammar_root)
@@ -42,14 +42,16 @@ function find_individual_solution(problem, grammar, grammar_root, num_solutions,
 end
 
 function find_solutions_per_example(examples, grammar, grammar_root, num_solutions, variable=:x)
-    solutions_per_example = Dict() #TODO remember this was for examples that go like 1,2,3,4,5
+    solutions_per_example = Dict()
     symboltable :: SymbolTable = SymbolTable(grammar, Main)
 
     for (num, example) in enumerate(examples)
         println("example $num")
-        
         problem = Problem("example$num", example)
-        found_solutions = timeout(()->find_individual_solution(problem, grammar, grammar_root, num_solutions, symboltable, variable), 600)()
+
+        #TODO timeout
+        found_solutions = find_individual_solution(problem, grammar, grammar_root, num_solutions, symboltable, variable)
+        #timeout(()->find_individual_solution(problem, grammar, grammar_root, num_solutions, symboltable, variable), 1)()
         
         solutions_per_example[example[1].in[variable]] = found_solutions
     end
@@ -61,10 +63,9 @@ function generate_small_terms(grammar, up_to_size, grammar_root)
     small_terms = []
 
     for candidate_program ∈ BFSIterator(grammar, grammar_root, max_size=up_to_size)
-        expr = rulenode2expr(candidate_program, grammar)
-        #if contains_variable(expr)    
-            push!(small_terms, expr)
-        #end
+        expr = rulenode2expr(candidate_program, grammar) 
+        push!(small_terms, expr)
+        #count_operators(expr) <= up_to_size  || break TODO it iterates incorectly for this; in order of size; size(--x) == size(x+1)
     end
 
     return small_terms
@@ -111,7 +112,7 @@ end
 # # Define IO examples
 # const examples = [[IOExample(Dict(:x => x), 2x + 1)] for x ∈ -10:10]
 
-# println(create_termset(examples, grammar))
+# println(create_termset(examples, grammar, :Number, :y, Union{Int,Expr,Symbol}))
 
 # end
 
