@@ -42,64 +42,96 @@ function group_by_operator_count(terms::Set{AllTypes})::Tuple{Dict{Int, Vector{A
     return grouped, max_count
 end
 
-function replace_with_symbol(e, variable)
+function replace_with_symbol(e, variables)
     expr = deepcopy(e)
-    if expr == variable
-        return :($(QuoteNode(variable)))
-    elseif typeof(expr) == Expr 
+    for variable in variables
+        if expr == variable
+            return :($(QuoteNode(variable)))
+        end
+    end
+    if typeof(expr) == Expr 
         for (i,arg) in enumerate(expr.args)
-            if arg == variable
-                expr.args[i] = :($(QuoteNode(variable)))
-            elseif typeof(arg) == Expr
-                expr.args[i] = replace_with_symbol(arg, variable)
+            if typeof(arg) == Expr
+                expr.args[i] = replace_with_symbol(arg, variables)
+            else
+                for variable in variables
+                    if arg == variable
+                        expr.args[i] = :($(QuoteNode(variable)))
+                        break
+                    end
+                end
             end
         end
     end
     return expr
 end
 
-function replace_back_to_expr(e, variable)
+function replace_back_to_expr(e, variables)
     expr = deepcopy(e)
-    if expr == :($(QuoteNode(variable)))
-        return variable
-    elseif typeof(expr) == Expr 
+    for variable in variables
+        if expr == :($(QuoteNode(variable)))
+            return variable
+        end
+    end
+    if typeof(expr) == Expr 
         for (i,arg) in enumerate(expr.args)
-            if arg == :($(QuoteNode(variable)))
-                expr.args[i] = variable
-            elseif typeof(arg) == Expr
-                expr.args[i] = replace_back_to_expr(arg, variable)
+            if typeof(arg) == Expr
+                expr.args[i] = replace_back_to_expr(arg, variables)
+            else
+                for variable in variables
+                    if arg == :($(QuoteNode(variable)))
+                        expr.args[i] = variable
+                        break
+                    end
+                end
             end
         end
     end
     return expr
 end
 
-function add_symbol_type(e, variable)
+function add_symbol_type(e, variables)
     expr = deepcopy(e)
-    if expr == variable
-        return :($(variable)::Symbol)
-    elseif typeof(expr) == Expr 
+    for variable in variables
+        if expr == variable
+            return :($(variable)::Symbol)
+        end
+    end
+    if typeof(expr) == Expr 
         for (i,arg) in enumerate(expr.args)
-            if arg == variable
-                expr.args[i] = :($(variable)::Symbol)
-            elseif typeof(arg) == Expr
-                expr.args[i] = add_symbol_type(arg, variable)
+            if typeof(arg) == Expr
+                expr.args[i] = add_symbol_type(arg, variables)
+            else
+                for variable in variables
+                    if arg == variable
+                        expr.args[i] = :($(variable)::Symbol)
+                        break
+                    end
+                end
             end
         end
     end
     return expr
 end
 
-function remove_symbol_type(e, variable)
+function remove_symbol_type(e, variables)
     expr = deepcopy(e)
-    if expr == :($(variable)::Symbol)
-        return variable
-    elseif typeof(expr) == Expr 
+    for variable in variables
+        if expr == :($(variable)::Symbol)
+            return variable
+        end
+    end
+    if typeof(expr) == Expr 
         for (i,arg) in enumerate(expr.args)
-            if arg == :($(variable)::Symbol)
-                expr.args[i] = variable
-            elseif typeof(arg) == Expr
-                expr.args[i] = remove_symbol_type(arg,variable)
+            if typeof(arg) == Expr
+                expr.args[i] = remove_symbol_type(arg,variables)
+            else
+                for variable in variables
+                    if arg == :($(variable)::Symbol)
+                        expr.args[i] = variable
+                        break
+                    end
+                end
             end
         end
     end

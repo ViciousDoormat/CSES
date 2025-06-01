@@ -52,78 +52,58 @@ end
     (Dict{Int64, Vector{Any}}(0 => [1, :x], 2 => [:(1 + (1 + x)), :((x + 1) + 1), :(1 + (1 + 1)), :(1 - -x)], 3 => [:((1 + -x) + 1)], 1 => [:(1 + x), :(x + y), :(x + 1)]), 3)
 end 
 
-println(replace_with_symbol(:x,:x))
-
 @testset "replace_with_symbol" begin
-    @test replace_with_symbol(:x,:x) == :(:x)
-    @test replace_with_symbol(:(1),:x) == :(1)
-    @test replace_with_symbol(:(x+1),:x) == :(:x+1)
-    @test replace_with_symbol(:(1+x),:x) == :(1+:x)
-    @test replace_with_symbol(:(x+y),:x) == :(:x+y)
-    @test replace_with_symbol(:(x+x),:x) == :(:x+:x)
-    @test replace_with_symbol(:(y+1),:x) == :(y+1)
-    @test replace_with_symbol(:(1+1+x),:x) == :(1+1+:x)
-    @test replace_with_symbol(:((x+1)+1),:x) == :((:x+1)+1)
-    @test replace_with_symbol(:(1+(x+1)),:x) == :(1+(:x+1))
-    @test replace_with_symbol(:(1+1+1),:x) == :(1+1+1)
-    @test replace_with_symbol(:(1+((-x)+1)),:x) == :(1+((-(:x))+1))
+    @test replace_with_symbol(:x,[:x]) == :(:x)
+    @test replace_with_symbol(:(1),[:x]) == :(1)
+    @test replace_with_symbol(:(x+1),[:x]) == :(:x+1)
+    @test replace_with_symbol(:(1+x),[:x]) == :(1+:x)
+    @test replace_with_symbol(:(x+y),[:x]) == :(:x+y)
+    @test replace_with_symbol(:(x+y),[:x,:y]) == :(:x+:y)
+    @test replace_with_symbol(:(x+x),[:x]) == :(:x+:x)
+    @test replace_with_symbol(:(y+1),[:x]) == :(y+1)
+    @test replace_with_symbol(:(1+1+x),[:x]) == :(1+1+:x)
+    @test replace_with_symbol(:((x+1)+1),[:x]) == :((:x+1)+1)
+    @test replace_with_symbol(:(1+(x+1)),[:x]) == :(1+(:x+1))
+    @test replace_with_symbol(:(1+1+1),[:x]) == :(1+1+1)
+    @test replace_with_symbol(:(1+((-x)+1)),[:x]) == :(1+((-(:x))+1))
 end 
-
-function replace_back_to_expr(e, variable)
-    expr = deepcopy(e)
-    if expr == :($variable)
-        return variable
-    elseif typeof(expr) == Expr 
-        for (i,arg) in enumerate(expr.args)
-            if arg == :($variable)
-                expr.args[i] = variable
-            elseif typeof(arg) == Expr
-                expr.args[i] = replace_back_to_expr(arg, variable)
-            end
-        end
-    end
-    return expr
-end
 
 @testset "replace_back_to_expr" begin
-    @test replace_back_to_expr(:(:x),:x) == :x
-    @test replace_back_to_expr(:(1),:x) == :(1)
-    @test replace_back_to_expr(:(:x+1),:x) == :(x+1)
-    @test replace_back_to_expr(:(1+:x),:x) == :(1+x)
-    @test replace_back_to_expr(:(:x+y),:x) == :(x+y)
-    @test replace_back_to_expr(:(:x+:x),:x) == :(x+x)
-    @test replace_back_to_expr(:(y+1),:x) == :(y+1)
-    @test replace_back_to_expr(:(1+1+:x),:x) == :(1+1+x)
-    @test replace_back_to_expr(:((:x+1)+1),:x) == :((x+1)+1)
-    @test replace_back_to_expr(:(1+(:x+1)),:x) == :(1+(x+1))
-    @test replace_back_to_expr(:(1+1+1),:x) == :(1+1+1)
-    @test replace_back_to_expr(:(1+((-(:x))+1)),:x) == :(1+((-x)+1))
+    @test replace_back_to_expr(:(:x),[:x]) == :x
+    @test replace_back_to_expr(:(1),[:x]) == :(1)
+    @test replace_back_to_expr(:(:x+1),[:x]) == :(x+1)
+    @test replace_back_to_expr(:(1+:x),[:x]) == :(1+x)
+    @test replace_back_to_expr(:(:x+:y),[:x]) == :(x+:y)
+    @test replace_back_to_expr(:(:x+:y),[:x,:y]) == :(x+y)
+    @test replace_back_to_expr(:(:x+:x),[:x]) == :(x+x)
+    @test replace_back_to_expr(:(y+1),[:x]) == :(y+1)
+    @test replace_back_to_expr(:(1+1+:x),[:x]) == :(1+1+x)
+    @test replace_back_to_expr(:((:x+1)+1),[:x]) == :((x+1)+1)
+    @test replace_back_to_expr(:(1+(:x+1)),[:x]) == :(1+(x+1))
+    @test replace_back_to_expr(:(1+1+1),[:x]) == :(1+1+1)
+    @test replace_back_to_expr(:(1+((-(:x))+1)),[:x]) == :(1+((-x)+1))
 end 
 
-println(add_symbol_type(:x,:x))
-
 @testset "add_symbol_type" begin
-    @test add_symbol_type(:x,:x) == :(x::Symbol)
-    @test add_symbol_type(:y,:x) == :y
-    @test add_symbol_type(1,:x) == 1
-    @test add_symbol_type(:(x+1),:x) == :(x::Symbol + 1)
-    @test add_symbol_type(:(1+x),:x) == :(1 + x::Symbol)
-    @test add_symbol_type(:(1+1),:x) == :(1+1)
-    @test add_symbol_type(:(1+(1+1)),:x) == :(1+(1+1))
-    @test add_symbol_type(:(1+(1+x)),:x) == :(1+(1+x::Symbol))
-    @test add_symbol_type(:(1-(-x)),:x) == :(1-(-x::Symbol))
+    @test add_symbol_type(:x,[:x]) == :(x::Symbol)
+    @test add_symbol_type(:y,[:x]) == :y
+    @test add_symbol_type(1,[:x]) == 1
+    @test add_symbol_type(:(x+1),[:x]) == :(x::Symbol + 1)
+    @test add_symbol_type(:(1+x),[:x]) == :(1 + x::Symbol)
+    @test add_symbol_type(:(1+1),[:x]) == :(1+1)
+    @test add_symbol_type(:(1+(1+1)),[:x]) == :(1+(1+1))
+    @test add_symbol_type(:(1+(1+x)),[:x]) == :(1+(1+x::Symbol))
+    @test add_symbol_type(:(1-(-x)),[:x]) == :(1-(-x::Symbol))
 end
 
-add_symbol_type(:(1-(-x::Symbol)),:x) == :(1-(-x))
-
 @testset "remove_symbol_type" begin
-    @test remove_symbol_type(:(x::Symbol),:x) == :x
-    @test remove_symbol_type(:y,:x) == :y
-    @test remove_symbol_type(1,:x) == 1
-    @test remove_symbol_type(:(x::Symbol + 1),:x) == :(x+1)
-    @test remove_symbol_type(:(1 + x::Symbol),:x) == :(1+x)
-    @test remove_symbol_type(:(1+1),:x) == :(1+1)
-    @test remove_symbol_type(:(1+(1+1)),:x) == :(1+(1+1))
-    @test remove_symbol_type(:(1+(1+x::Symbol)),:x) == :(1+(1+x))
-    @test remove_symbol_type(:(1-(-x::Symbol)),:x) == :(1-(-x))
+    @test remove_symbol_type(:(x::Symbol),[:x]) == :x
+    @test remove_symbol_type(:y,[:x]) == :y
+    @test remove_symbol_type(1,[:x]) == 1
+    @test remove_symbol_type(:(x::Symbol + 1),[:x]) == :(x+1)
+    @test remove_symbol_type(:(1 + x::Symbol),[:x]) == :(1+x)
+    @test remove_symbol_type(:(1+1),[:x]) == :(1+1)
+    @test remove_symbol_type(:(1+(1+1)),[:x]) == :(1+(1+1))
+    @test remove_symbol_type(:(1+(1+x::Symbol)),[:x]) == :(1+(1+x))
+    @test remove_symbol_type(:(1-(-x::Symbol)),[:x]) == :(1-(-x))
 end

@@ -10,9 +10,9 @@ using HerbCore
 
 using IterTools
 
-function solve(examples, grammar, grammar_root, variable, ::Type{AllTypes}, ::Type{CVec}, num_solutions=1, up_to_size=3) where {AllTypes, CVec}
+function solve(examples, grammar, grammar_root, variables, ::Type{AllTypes}, ::Type{CVec}, num_solutions=1, up_to_size=3) where {AllTypes, CVec}
     println("create termset")
-    ungrouped_termset, solutions_per_example = create_termset(examples, grammar, grammar_root, variable, AllTypes, num_solutions, up_to_size)
+    ungrouped_termset, solutions_per_example = create_termset(examples, grammar, grammar_root, variables, AllTypes, num_solutions, up_to_size)
     println(solutions_per_example)
     #TODO TEMPORARY; to get beyond creating termset in debugger
     # ungrouped_termset = Set(Union{Int64, Expr, Symbol}[:(3 + 0), :(2 + 3), :(x * 1), :(1 + 2), 0, :(3 * 2), :(0 * 0), :(1 * 1), :(x * 3), :(2 + 2), :x, :(0 + 1), :(2 * 1), :(x + 1), :(1 * 3), :(1 + 0), :(1 * x), :(3 * 0), :(0 + 3), :(1 + x), :(x * 2), :(2 * 3), :(x + 3), :(2 + 0), :(2 + x), :(3 + 1), :(1 * 2), :(x * x), :(0 + 2), :(3 + 3), 1, :(2 * 2), :(x * 0), :(x + 2), :(x + x), :(0 * 1), 3, :(1 * 0), :(3 + 2), :(0 * 3), :(0 + x), :(0 * x), :(0 + 0), :(1 + 1), :(2 * 0), :(x + 0), :(3 * 1), :(2 * x), :(3 + x), 2, :(2 + 1), :(1 + 3), :(0 * 2), :(3 * 3), :(3 * x)])
@@ -27,17 +27,18 @@ function solve(examples, grammar, grammar_root, variable, ::Type{AllTypes}, ::Ty
 
     all_rules = Dict()
     for (n,example) in enumerate(examples)
-        i = example[1].in[variable]
+        var_to_value = example[1].in
+        #i = example[1].in[variable]
     
-        println("Find rules for input $i; example $n/$(length(examples))\n")
+        println("Find rules for inputs $var_to_value; example $n/$(length(examples))\n")
     
-        Ruler.variable_cvec = () -> [i]
-        println(Ruler.variable_cvec())
-        T,R = ruler(max_operator_count, grouped_termset, variable, CVec)
+        Ruler.variable_cvec = (var::Symbol) -> [var_to_value[var]]
+        #println(Ruler.variable_cvec())
+        T,R = ruler(max_operator_count, grouped_termset, variables, CVec)
         R = reduce(vcat, R)
-        all_rules[i] = R
+        all_rules[n] = R
     
-        println("Found $(length(R)) rules for input $i")
+        println("Found $(length(R)) rules for input $var_to_value")
         println(R)
     end
     println("Rules found")
@@ -45,19 +46,20 @@ function solve(examples, grammar, grammar_root, variable, ::Type{AllTypes}, ::Ty
     all_graphs::Vector{EGraph{Expr,Nothing}} = []
 
     for (n,example) in enumerate(examples)
-        i::CVec = example[1].in[variable]
+        var_to_value = example[1].in
+        #i = example[1].in[variable]
     
-        println("Find solutions for input $i; example $n/$(length(examples))\n")
+        println("Find solutions for input $var_to_value; example $n/$(length(examples))\n")
     
-        solutions = solutions_per_example[i]
+        solutions = solutions_per_example[n]
         G = EGraph{Expr,Nothing}()
         for term in solutions
             G.root = addexpr!(G, term)
         end
-        @invokelatest saturate!(G,all_rules[i])
+        @invokelatest saturate!(G,all_rules[n])
         push!(all_graphs, G)
     
-        println("Found soltutions for input $i")
+        println("Found soltutions for input $var_to_value")
     
     end
 

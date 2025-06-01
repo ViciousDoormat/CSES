@@ -6,7 +6,7 @@ using HerbCore
 
 using HerbBenchmarks.SyGuS
 
-function find_individual_solution(problem, grammar, grammar_root, num_solutions, symboltable, variable)
+function find_individual_solution(problem, grammar, grammar_root, num_solutions, symboltable, variables)
     found_solutions = []
     
     for candidate_program ∈ BFSIterator(grammar, grammar_root)
@@ -18,7 +18,7 @@ function find_individual_solution(problem, grammar, grammar_root, num_solutions,
         score = HerbSearch.evaluate(problem, expr, symboltable, allow_evaluation_errors=true)
         if score == 1
             expr = rulenode2expr(HerbConstraints.freeze_state(candidate_program),grammar)
-            if contains_variable(expr, variable)
+            if all(variable -> contains_variable(expr, variable), variables)  #TODO make one function?
                 push!(found_solutions, expr)
             end
         end
@@ -31,7 +31,7 @@ function find_individual_solution(problem, grammar, grammar_root, num_solutions,
     return found_solutions
 end
 
-function find_solutions_per_example(examples, grammar, grammar_root, num_solutions, variable=:x)
+function find_solutions_per_example(examples, grammar, grammar_root, num_solutions, variables)
     solutions_per_example = Dict()
     symboltable :: SymbolTable = SymbolTable(grammar, Main)
 
@@ -40,10 +40,10 @@ function find_solutions_per_example(examples, grammar, grammar_root, num_solutio
         problem = Problem("example$num", example)
 
         #TODO timeout
-        found_solutions = find_individual_solution(problem, grammar, grammar_root, num_solutions, symboltable, variable)
+        found_solutions = find_individual_solution(problem, grammar, grammar_root, num_solutions, symboltable, variables)
         #timeout(()->find_individual_solution(problem, grammar, grammar_root, num_solutions, symboltable, variable), 1)()
         
-        solutions_per_example[example[1].in[variable]] = found_solutions
+        solutions_per_example[num] = found_solutions
     end
     
     return solutions_per_example
@@ -61,10 +61,10 @@ function generate_small_terms(grammar, up_to_size, grammar_root)
     return small_terms
 end
 
-function create_termset(examples, grammar, grammar_root, variable, ::Type{AllTypes}, num_solutions=1, up_to_size=3) where {AllTypes}
+function create_termset(examples, grammar, grammar_root, variables, ::Type{AllTypes}, num_solutions=1, up_to_size=3) where {AllTypes}
     D = Set{AllTypes}()#Set{Union{ExprType, Symbol, Int}}()
     println("find solutions per example")
-    solutions_per_example = find_solutions_per_example(examples, grammar, grammar_root, num_solutions, variable)
+    solutions_per_example = find_solutions_per_example(examples, grammar, grammar_root, num_solutions, variables)
     
     println("finding small terms")
     small_terms = generate_small_terms(grammar, up_to_size, grammar_root)
