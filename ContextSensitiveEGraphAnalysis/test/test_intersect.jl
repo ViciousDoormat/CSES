@@ -1,4 +1,4 @@
-include("../intersect.jl")
+include("../src/intersect.jl")
 
 using .Intersect
 using Test

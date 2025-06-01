@@ -1,4 +1,4 @@
-include("../ruler.jl")
+include("../src/helper_functions.jl")
 
 using .Ruler
 using Test

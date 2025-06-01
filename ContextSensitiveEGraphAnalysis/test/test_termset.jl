@@ -1,11 +1,10 @@
-include("../termset.jl")
+include("../src/termset.jl")
 
 using HerbSearch
 using HerbGrammar
 using HerbSpecification
 using HerbConstraints
 using HerbCore
-using .Termset
 using Test
 using Timeout
 

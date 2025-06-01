@@ -1,7 +1,3 @@
-module Termset
-
-export create_termset
-
 using HerbSearch
 using HerbGrammar
 using HerbSpecification
@@ -9,12 +5,6 @@ using HerbConstraints
 using HerbCore
 
 using HerbBenchmarks.SyGuS
-
-using Timeout
-
-include("helper_functions.jl")
-
-using .Helper
 
 function find_individual_solution(problem, grammar, grammar_root, num_solutions, symboltable, variable)
     found_solutions = []
@@ -25,7 +15,7 @@ function find_individual_solution(problem, grammar, grammar_root, num_solutions,
         #println(expr)
     
         # Evaluate the expression
-        score = HerbSearch.evaluate(problem, expr, symboltable)
+        score = HerbSearch.evaluate(problem, expr, symboltable, allow_evaluation_errors=true)
         if score == 1
             expr = rulenode2expr(HerbConstraints.freeze_state(candidate_program),grammar)
             if contains_variable(expr, variable)
@@ -78,6 +68,7 @@ function create_termset(examples, grammar, grammar_root, variable, ::Type{AllTyp
     
     println("finding small terms")
     small_terms = generate_small_terms(grammar, up_to_size, grammar_root)
+    println(small_terms)
     
     for solutions in values(solutions_per_example)
         union!(D, solutions)
@@ -87,37 +78,3 @@ function create_termset(examples, grammar, grammar_root, variable, ::Type{AllTyp
 
     return D, solutions_per_example
 end
-
-end
-
-
-# module Test
-# using ..Termset
-
-# using HerbSearch
-# using HerbGrammar
-# using HerbSpecification
-# using HerbConstraints
-# using HerbCore
-
-# # Define the grammar
-# const grammar = @csgrammar begin
-#     Number = |(0:4)
-#     Number = x
-#     Number = -Number
-#     Number = Number + Number
-#     Number = Number * Number
-# end
-
-# # Define IO examples
-# const examples = [[IOExample(Dict(:x => x), 2x + 1)] for x ∈ -10:10]
-
-# println(create_termset(examples, grammar, :Number, :y, Union{Int,Expr,Symbol}))
-
-# end
-
-
-
-
-
-

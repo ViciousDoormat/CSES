@@ -1,14 +1,24 @@
+
 module Ruler
 
-export ruler, variable_cvec
+export ruler
+
+using ..ContextSensitiveEGraphAnalysis:
+    contains_variable, replace_with_symbol, replace_back_to_expr, add_symbol_type, remove_symbol_type, loading_bar,
+    bvneg_cvc, bvnot_cvc, bvadd_cvc, bvsub_cvc, bvxor_cvc, bvand_cvc, bvor_cvc, bvshl_cvc, bvlshr_cvc, bvashr_cvc, 
+    bvnand_cvc, bvnor_cvc, ehad_cvc, arba_cvc, shesh_cvc, smol_cvc, im_cvc, if0_cvc,
+    concat_cvc, replace_cvc, at_cvc, int_to_str_cvc, substr_cvc, len_cvc, str_to_int_cvc, indexof_cvc, prefixof_cvc, 
+    suffixof_cvc, contains_cvc, lt_cvc, leq_cvc, isdigit_cvc
+
+
+# CVC5 functions
+
+## String typed
+
 
 using Metatheory
 using Metatheory.Library
 using Metatheory.EGraphs
-
-include("helper_functions.jl")
-
-using .Helper
 
 const N = 1 # The number of outputs in a cvec
 
@@ -193,9 +203,9 @@ function run_rewrites!(T::EGraph{Expr, Vector{CVec}}, R::Vector{RewriteRule}) wh
 
     # It then copies the newly learned equalities (e-class merges) back to the original e-graph. 
     # This avoids polluting the e-graph with terms added during equality saturation.
-    for (initial, final) in enumerate(g.uf.parents)
-        final = find(g, final)
-        if initial != final && initial in initial_classes && final in initial_classes
+    for (initial, intermediate) in enumerate(g.uf.parents)
+        final = find(g, intermediate)
+        if initial != final && initial in initial_classes && intermediate in initial_classes
             #println("merge $initial and $final")
             Metatheory.EGraphs.union!(T, UInt(initial), UInt(final))
         end
@@ -335,17 +345,3 @@ function ruler(iterations::Int, D::Dict{Int, Vector{AllTypes}}, variable::Symbol
 end
 
 end
-
-# module Test
-# using ..Ruler
-
-# for i in 1:3
-#     #In my case, this can directly be taken from the IO example(s) per EGraph.
-#     #Meaning that this will just return the output(s) of the IO example(s) that correspond with an EGraph.
-#     Ruler.variable_cvec = () -> [i]
-#     Ruler.CVecAnalysis = Vector{Int} 
-#     D::Dict{Int, Vector{Union{Int64, Expr, Symbol}}} = Dict(0 => [:(x), 1, 0], 1 => [:(x + 0), :(x + 1)])
-#     ruler(1, D, Expr)
-# end
-
-# end

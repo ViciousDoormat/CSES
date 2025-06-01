@@ -1,8 +1,3 @@
-module Helper
-
-export contains_variable, count_operators, group_by_operator_count, replace_with_symbol, replace_back_to_expr, add_symbol_type, remove_symbol_type, loading_bar
-export bvneg_cvc, bvnot_cvc, bvadd_cvc, bvsub_cvc, bvxor_cvc, bvand_cvc, bvor_cvc, bvshl_cvc, bvlshr_cvc, bvashr_cvc, bvnand_cvc
-export bvnor_cvc, ehad_cvc, arba_cvc, shesh_cvc, smol_cvc, im_cvc, if0_cvc
 
 function contains_variable(expr, variable)
     if expr == variable
@@ -133,12 +128,34 @@ smol_cvc(n::UInt) = bvshl_cvc(n, 1)
 im_cvc(x::UInt, y::UInt, z::UInt) = x == UInt(1) ? y : z
 if0_cvc(x::UInt, y::UInt, z::UInt) = x == UInt(0) ? y : z
 
+
+# CVC5 functions
+
+## String typed
+concat_cvc(str1::String, str2::String) = str1 * str2
+replace_cvc(mainstr::String, to_replace::String, replace_with::String) = replace(mainstr, to_replace => replace_with)
+at_cvc(str::String, index) = string(str[Int(index)])
+int_to_str_cvc(n) = "$(Int(n))"
+substr_cvc(str::String, start_index, end_index) = str[Int(start_index):Int(end_index)]
+
+# Int typed
+len_cvc(str::String) = length(str)
+str_to_int_cvc(str::String) = parse(Int64, str)
+indexof_cvc(str::String, substring::String, index) = (n = findfirst(substring, str); n == nothing ? -1 : (n[1] >= Int(index) ? n[1] : -1))
+
+# Bool typed
+prefixof_cvc(prefix::String, str::String) = startswith(str, prefix)
+suffixof_cvc(suffix::String, str::String) = endswith(str, suffix)
+contains_cvc(str::String, contained::String) = contains(str, contained)
+lt_cvc(str1::String, str2::String) = cmp(str1, str2) < 0
+leq_cvc(str1::String, str2::String) = cmp(str1, str2) <= 0
+isdigit_cvc(str::String) = tryparse(Int, str) !== nothing
+
+
 function loading_bar(current, max)
     progress = round(Int, current / max * 50)  # 50 chars wide
     bar = "[" * repeat("=", progress) * repeat(" ", 50 - progress) * "]"
     print("\rProgress: ", bar)
-end
-
 end
 
 #run it on the string benchmark 
