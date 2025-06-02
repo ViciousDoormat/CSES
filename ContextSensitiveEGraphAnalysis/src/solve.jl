@@ -35,7 +35,6 @@ function solve(examples, grammar, grammar_root, variables, ::Type{AllTypes}, ::T
         Ruler.variable_cvec = (var::Symbol) -> [var_to_value[var]]
         #println(Ruler.variable_cvec())
         T,R = ruler(max_operator_count, grouped_termset, variables, CVec)
-        R = reduce(vcat, R)
         all_rules[n] = R
     
         println("Found $(length(R)) rules for input $var_to_value")
