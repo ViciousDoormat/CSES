@@ -49,11 +49,19 @@ function find_solutions_per_example(examples, grammar, grammar_root, num_solutio
     return solutions_per_example
 end
 
-function generate_small_terms(grammar, up_to_size, grammar_root)
+function generate_small_terms(grammar, up_to_size, grammar_root, example_input)
     small_terms = []
+    symboltable :: SymbolTable = SymbolTable(grammar, Main)
 
     for candidate_program ∈ BFSIterator(grammar, grammar_root, max_size=up_to_size)
         expr = rulenode2expr(candidate_program, grammar) 
+
+        try
+            execute_on_input(symboltable, expr, example_input)
+        catch
+            continue
+        end
+
         push!(small_terms, expr)
         #count_operators(expr) <= up_to_size  || break TODO it iterates incorectly for this; in order of size; size(--x) == size(x+1)
     end
@@ -62,12 +70,12 @@ function generate_small_terms(grammar, up_to_size, grammar_root)
 end
 
 function create_termset(examples, grammar, grammar_root, variables, ::Type{AllTypes}, num_solutions=1, up_to_size=3) where {AllTypes}
-    D = Set{AllTypes}()#Set{Union{ExprType, Symbol, Int}}()
+    D = Set{AllTypes}()
     println("find solutions per example")
     solutions_per_example = find_solutions_per_example(examples, grammar, grammar_root, num_solutions, variables)
     
     println("finding small terms")
-    small_terms = generate_small_terms(grammar, up_to_size, grammar_root)
+    small_terms = generate_small_terms(grammar, up_to_size, grammar_root, examples[1][1].in)
     println(small_terms)
     
     for solutions in values(solutions_per_example)

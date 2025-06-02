@@ -1,6 +1,5 @@
 include("../src/intersect.jl")
 
-using .Intersect
 using Test
 using Metatheory
 
@@ -53,4 +52,4 @@ println(g₁)
 println(g₂)
 
 println("Intersecting eclasses")
-println(Intersect.intersect(Union{Int, Symbol, Expr}, [g₁, g₂]))
+println(intersect(Union{Int, Symbol, Expr}, [g₁, g₂]))

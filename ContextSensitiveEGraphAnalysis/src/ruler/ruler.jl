@@ -59,37 +59,31 @@ function EGraphs.make(g::EGraph{Expr, Vector{CVec}}, n::VecExpr)::Vector{CVec} w
     op = get_constant(g, v_head(n)) 
     
     if !v_isexpr(n)
-        # When t꜀ is a variable x, return N values from the target domain (randomly or in some specific way)
+        # When n is a variable x, return N values from the target domain (randomly or in some specific way)
         if typeof(op) == Symbol
             return variable_cvec(op)
         end
-        # When t꜀ is a constant n, return N copies of n
+        # When n is a constant n, return N copies of n
         return fill(op, N)
     end
 
     # When t꜀ is a function call f(c1, c2, ..., cn), return map(f, zip(v1, v2, ..., vn))
+
+    # All cvecs of the children of n
+    children_cvecs = map(c -> g[c].data, v_children(n))
+
+    # n gets called in all these ways
+    parameter_possibilities = zip(children_cvecs...)
+
+    # Call op, that represents n, in all those ways to get the cvec
     if v_iscall(n)
-        # All cvecs of the children of n
-        children_cvecs = map(c -> g[c].data, v_children(n))
-
-        # n gets called in all these ways
-        parameter_possibilities = zip(children_cvecs...)
-
-        # Call op, that represents n, in all those ways
+        # If n is represented as an explicit function call in Julia
         cvec = map(params -> eval(maketerm(Expr, :call, [op, params...], nothing)), parameter_possibilities)
-
-        return cvec
     else
-        children_cvecs = map(c -> g[c].data, v_children(n))
-
-        # n gets called in all these ways
-        parameter_possibilities = zip(children_cvecs...)
-
-        # Call op, that represents n, in all those ways
+        # If n is not represetned as a function call; example is &&
         cvec = map(params -> eval(maketerm(Expr, op, params, nothing)), parameter_possibilities)
-
-        return cvec
     end
+    return cvec
 end
 
 """
@@ -126,14 +120,12 @@ function add_terms!(g::EGraph{Expr, Vector{CVec}}, D::Dict{Int, Vector{AllTypes}
     if  haskey(D, i)
         for term in D[i]
             addexpr!(g, term)
-            #println("added $term")
         end
     end
 end
 
 function create_rewrite_rule(x_can, y_can, variables)::RewriteRule
-    r = eval(:(@rule $(replace_with_symbol(x_can,variables)) == $(replace_with_symbol(y_can,variables))))
-    return r
+    return eval(:(@rule $(replace_with_symbol(x_can,variables)) == $(replace_with_symbol(y_can,variables))))
 end
 
 #TODO when the cvecs are made, add them to a dic of equal cvecs already
@@ -149,23 +141,25 @@ function cvec_match(g::EGraph{Expr, Vector{CVec}}, variables::Vector{Symbol}, ::
     ids = collect(keys(eclasses))
 
     for i in 1:(length(ids)-1)
-        loading_bar(i, length(ids))#println("\ri: $i")
+        loading_bar(i, length(ids))
         key_x = ids[i]
         x::Vector{CVec} = eclasses[key_x].data
 
         for j in (i+1):length(ids)
             key_y = ids[j]   
             y::Vector{CVec} = eclasses[key_y].data
-            if equal_cvecs(x, y) && (key_x.val, key_y.val) ∉ proven_unequal
-                #TODO why does it try to extract 17 when I tell it to extract 7
-                
+            # If the cvecs match, and the classes are not proven unequal, create a candidate rule
+            if equal_cvecs(x, y) && (key_x.val, key_y.val) ∉ proven_unequal     
+                # Get a canonical term for both eclasses           
                 x_can = extract!(g, astsize, key_x.val)
                 y_can = extract!(g, astsize, key_y.val)
 
-                lhs = replace_with_symbol(x_can,variables)
-                rhs = replace_with_symbol(y_can,variables)
-                r = eval(:(@rule $lhs == $rhs))
-    
+                # Make the rewrite rule
+                #lhs = replace_with_symbol(x_can,variables)
+                #rhs = replace_with_symbol(y_can,variables)
+                #r = eval(:(@rule $lhs == $rhs))
+                r = create_rewrite_rule(x_can, y_can, variables)
+
                 push!(C, r)
             end
         end
@@ -190,7 +184,6 @@ function run_rewrites!(T::EGraph{Expr, Vector{CVec}}, R::Vector{RewriteRule}) wh
     for (initial, intermediate) in enumerate(g.uf.parents)
         final = find(g, intermediate)
         if initial != final && initial in initial_classes && intermediate in initial_classes
-            #println("merge $initial and $final")
             Metatheory.EGraphs.union!(T, UInt(initial), UInt(final))
         end
     end
