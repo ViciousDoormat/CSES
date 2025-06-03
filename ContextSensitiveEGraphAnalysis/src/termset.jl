@@ -49,7 +49,7 @@ function find_solutions_per_example(examples, grammar, grammar_root, num_solutio
     return solutions_per_example
 end
 
-function generate_small_terms(grammar, up_to_size, grammar_root, example_input)
+function generate_small_terms(grammar, up_to_size, grammar_root, examples)
     small_terms = []
     symboltable :: SymbolTable = SymbolTable(grammar, Main)
 
@@ -57,12 +57,14 @@ function generate_small_terms(grammar, up_to_size, grammar_root, example_input)
         expr = rulenode2expr(candidate_program, grammar) 
 
         try
-            execute_on_input(symboltable, expr, example_input)
+            for example in examples 
+                HerbSearch.HerbInterpret.execute_on_input(symboltable, expr, example[1].in)
+            end
+            push!(small_terms, expr)
         catch
-            continue
         end
 
-        push!(small_terms, expr)
+        
         #count_operators(expr) <= up_to_size  || break TODO it iterates incorectly for this; in order of size; size(--x) == size(x+1)
     end
 
@@ -75,7 +77,7 @@ function create_termset(examples, grammar, grammar_root, variables, ::Type{AllTy
     solutions_per_example = find_solutions_per_example(examples, grammar, grammar_root, num_solutions, variables)
     
     println("finding small terms")
-    small_terms = generate_small_terms(grammar, up_to_size, grammar_root, examples[1][1].in)
+    small_terms = generate_small_terms(grammar, up_to_size, grammar_root, examples)
     println(small_terms)
     
     for solutions in values(solutions_per_example)
