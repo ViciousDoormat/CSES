@@ -36,6 +36,9 @@ function intersect(::Type{AllTypes}, gs::Vector{<:EGraph}, cs::Vector{<:EClass}=
   c_constants_to_nodes = map((g,c) -> get_eclass_constants(g, c, AllTypes), gs, cs)
   common_constants = Base.intersect(map(c -> Vector{Tuple{AllTypes,Int}}(collect(keys(c))), c_constants_to_nodes)...)
   sort!(common_constants, by=(t -> t[2]))
+  
+  #before finding common constants, remove all classes that are :any
+  #if length(cs) becomes 0, return :any
 
   for c in common_constants
     println("constant: ", c)
