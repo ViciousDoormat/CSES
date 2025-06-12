@@ -1,5 +1,6 @@
 include("../src/helper_functions.jl")
 include("../src/termset.jl")
+include("../src/sygus_string_interpret.jl")
 
 using HerbSearch
 using HerbGrammar

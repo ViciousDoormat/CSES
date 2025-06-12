@@ -6,16 +6,18 @@ using HerbCore
 
 using HerbBenchmarks.SyGuS
 
-function find_individual_solution(problem, grammar, grammar_root, num_solutions, symboltable, variables)
+function find_individual_solution(example, grammar, grammar_root, num_solutions, tags, variables)
     found_solutions = []
     
-    for candidate_program ∈ BFSIterator(grammar, grammar_root)
-        # Create expression from rulenode representation of AST
-        expr = rulenode2expr(candidate_program, grammar)
-        #println(expr)
-    
+    for candidate_program ∈ BFSIterator(grammar, grammar_root)  
         # Evaluate the expression
-        score = HerbSearch.evaluate(problem, expr, symboltable, allow_evaluation_errors=true)
+        score = 0
+
+        try 
+            score = interpret_sygus(candidate_program, tags, example.in) == example.out
+        catch
+        end
+
         if score == 1
             expr = rulenode2expr(HerbConstraints.freeze_state(candidate_program),grammar)
             if all(variable -> contains_variable(expr, variable), variables)  #TODO make one function?
@@ -33,14 +35,13 @@ end
 
 function find_solutions_per_example(examples, grammar, grammar_root, num_solutions, variables)
     solutions_per_example = Dict()
-    symboltable :: SymbolTable = SymbolTable(grammar, Main)
+    tags = get_relevant_tags(grammar)
 
     for (num, example) in enumerate(examples)
         println("example $num")
-        problem = Problem("example$num", example)
 
         #TODO timeout
-        found_solutions = find_individual_solution(problem, grammar, grammar_root, num_solutions, symboltable, variables)
+        found_solutions = find_individual_solution(example[1], grammar, grammar_root, num_solutions, tags, variables)
         #timeout(()->find_individual_solution(problem, grammar, grammar_root, num_solutions, symboltable, variable), 1)()
         
         solutions_per_example[num] = found_solutions
@@ -51,19 +52,18 @@ end
 
 function generate_small_terms(grammar, up_to_size, grammar_root, examples)
     small_terms = []
-    symboltable :: SymbolTable = SymbolTable(grammar, Main)
+    tags = get_relevant_tags(grammar)
 
     for candidate_program ∈ BFSIterator(grammar, grammar_root, max_size=up_to_size)
-        expr = rulenode2expr(candidate_program, grammar) 
 
         try
             for example in examples 
-                HerbSearch.HerbInterpret.execute_on_input(symboltable, expr, example[1].in)
+                interpret_sygus(candidate_program,tags,example[1].in)
             end
+            expr = rulenode2expr(candidate_program, grammar) 
             push!(small_terms, expr)
         catch
         end
-
         
         #count_operators(expr) <= up_to_size  || break TODO it iterates incorectly for this; in order of size; size(--x) == size(x+1)
     end

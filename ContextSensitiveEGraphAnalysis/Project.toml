@@ -11,6 +11,7 @@ HerbGrammar = "4ef9e186-2fe5-4b24-8de7-9f7291f24af7"
 HerbSearch = "3008d8e8-f9aa-438a-92ed-26e9c7b4829f"
 HerbSpecification = "6d54aada-062f-46d8-85cf-a1ceaf058a06"
 IterTools = "c8e1da08-722c-5040-9ed9-7db0dc04731e"
+MLStyle = "d8e11817-5142-5d16-987a-aa16d5891078"
 Metatheory = "e9d8d322-4543-424a-9be4-0cc815abe26c"
 
 [compat]
@@ -21,4 +22,5 @@ HerbGrammar = "0.5.2"
 HerbSearch = "0.4.6"
 HerbSpecification = "0.2.1"
 IterTools = "1.10.0"
+MLStyle = "0.4.17"
 Metatheory = "3.0.0"
