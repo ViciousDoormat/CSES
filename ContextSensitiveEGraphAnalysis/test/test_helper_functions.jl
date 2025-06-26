@@ -107,3 +107,21 @@ end
     @test remove_symbol_type(:(1+(1+x::Symbol)),[:x]) == :(1+(1+x))
     @test remove_symbol_type(:(1-(-x::Symbol)),[:x]) == :(1-(-x))
 end
+
+# Ruler’s syntactic heuristic prefers candidates with the following characteristics (lexicographically): 
+# more distinct variables, fewer constants, shorter larger side (between the two terms forming the candidate), 
+# shorter smaller side, and fewer distinct operators.
+@testset "compare_rules_test" begin
+    @test compare_rules(:(x+(y+z)),:(a+(b+c)),:(z+(y+x)),:(c+(b+a)),[:x,:y,:z,:a,:b,:c]) == true #equal in this context
+    @test compare_rules(:(x+(y+z)),:(a+(b+c)),:(x+(a+c)),:(b+(y+z)),[:x,:y,:z,:a,:b,:c]) == true #equal in this context
+    @test compare_rules(:(x+(y+z)),:(a+(b+c)),:(x+y),:(a+b),[:x,:y,:z,:a,:b,:c]) == true #left one has more vars, even though right one is shorter
+    @test compare_rules(:(x+y),:(a+b),:(x+(y+y)),:(a+(b+b)),[:x,:y,:z,:a,:b,:c]) == true #left one is shorter
+    @test compare_rules(:(x+(y+(z+x))),:(a+(b+c)),:(x+(y+(z+1))),:(a+(b+c)),[:x,:y,:z,:a,:b,:c]) == true #left has no constants
+    @test compare_rules(:(x+(y+z)),:(a+(b+c)),:(x+y),:(x+(y+(z+(a+(b+c))))),[:x,:y,:z,:a,:b,:c]) == true #left has shorter largest side
+    @test compare_rules(:(x+(y+z)),:(a+(b+c)),:(x+(y+z)),:(a+(b+(c+c))),[:x,:y,:z,:a,:b,:c]) == true #left has shorter smaller side
+end
+
+xs = [[:(x+(y+z)),:(a+(b+c))],[:(z+(y+x)),:(c+(b+a))], [:(x+(y+z)),:(a+(b+c))],[:(x+(a+c)),:(b+(y+z))],[:(x+(y+z)),:(a+(b+c))],[:(x+y),:(a+b)],
+[:(x+y),:(a+b)],[:(x+(y+y)),:(a+(b+b))],[:(x+(y+(z+x))),:(a+(b+c))],[:(x+(y+(z+1))),:(a+(b+c))],[:(x+(y+z)),:(a+(b+c))],[:(x+y),:(x+(y+(z+(a+(b+c)))))],[:(x+(y+z)),:(a+(b+c))],[:(x+(y+z)),:(a+(b+(c+c)))]]
+vars = [:x,:y,:z,:a,:b,:c]
+sort_rules(xs,vars)

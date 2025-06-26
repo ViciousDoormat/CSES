@@ -1,0 +1,92 @@
+using HerbSearch
+using HerbGrammar
+using HerbSpecification
+using HerbConstraints
+using HerbCore
+using MLStyle 
+
+"""
+Gets relevant symbol to easily match grammar rules to operations in `interpret` function
+"""
+function get_relevant_tags(grammar::ContextSensitiveGrammar)
+        tags = Dict{Int,Any}()
+        for (ind, r) in pairs(grammar.rules)
+                tags[ind] = if typeof(r) != Expr
+                        r
+                else
+                    println(r.head)
+                    MLStyle.@match r.head begin
+                                :block => :OpSeq
+                                :call => r.args[1]
+                                :if => :IF
+                                _ => r.head
+                        end
+                end
+        end
+        return tags
+end
+
+function interpret_sygus(prog::AbstractRuleNode, grammar_tags::Dict{Int,Any}, state)
+        r = get_rule(prog)
+        c = get_children(prog)
+
+        MLStyle.@match grammar_tags[r] begin
+                :concat_cvc     => concat_cvc(interpret_sygus(c[1], grammar_tags, state), interpret_sygus(c[2], grammar_tags, state))
+                :replace_cvc    => replace_cvc(interpret_sygus(c[1], grammar_tags, state), interpret_sygus(c[2], grammar_tags, state), interpret_sygus(c[3], grammar_tags, state))
+                :at_cvc         => at_cvc(interpret_sygus(c[1], grammar_tags, state), interpret_sygus(c[2], grammar_tags, state))
+                :int_to_str_cvc => int_to_str_cvc(interpret_sygus(c[1], grammar_tags, state))
+                :substr_cvc     => substr_cvc(interpret_sygus(c[1], grammar_tags, state), interpret_sygus(c[2], grammar_tags, state), interpret_sygus(c[3], grammar_tags, state))
+                :len_cvc        => len_cvc(interpret_sygus(c[1], grammar_tags, state))
+                :str_to_int_cvc => str_to_int_cvc(interpret_sygus(c[1], grammar_tags, state))
+                :indexof_cvc    => indexof_cvc(interpret_sygus(c[1], grammar_tags, state), interpret_sygus(c[2], grammar_tags, state), interpret_sygus(c[3], grammar_tags, state))
+                :prefixof_cvc   => prefixof_cvc(interpret_sygus(c[1], grammar_tags, state), interpret_sygus(c[2], grammar_tags, state))
+                :suffixof_cvc   => suffixof_cvc(interpret_sygus(c[1], grammar_tags, state), interpret_sygus(c[2], grammar_tags, state))
+                :contains_cvc   => contains_cvc(interpret_sygus(c[1], grammar_tags, state), interpret_sygus(c[2], grammar_tags, state))
+                
+                :+              => interpret_sygus(c[1], grammar_tags, state) + interpret_sygus(c[2], grammar_tags, state)
+                :-              => interpret_sygus(c[1], grammar_tags, state) - interpret_sygus(c[2], grammar_tags, state)
+                :(==)           => interpret_sygus(c[1], grammar_tags, state) == interpret_sygus(c[2], grammar_tags, state)
+
+                :&&             => interpret_sygus(c[1], grammar_tags, state) && interpret_sygus(c[2], grammar_tags, state)
+                :||             => interpret_sygus(c[1], grammar_tags, state) || interpret_sygus(c[2], grammar_tags, state)
+
+                :IF             => interpret_sygus(c[1], grammar_tags, state) ? interpret_sygus(c[2], grammar_tags, state) : interpret_sygus(c[3], grammar_tags, state)
+                _ => typeof(grammar_tags[r]) == Symbol && haskey(state,grammar_tags[r]) ? state[grammar_tags[r]] : grammar_tags[r]
+        end
+end
+
+function interpret_sygus(expr, state=nothing)
+    if typeof(expr) != Expr 
+        return typeof(expr) == Symbol && state !== nothing && haskey(state,expr) ? state[expr] : expr
+    end
+
+    c = expr.args
+    head = expr.head
+
+    if head != :call
+        if head == :if
+            return interpret_sygus(c[1], state) ? interpret_sygus(c[2], state) : interpret_sygus(c[3], state)
+        end
+        error(huilen2)
+    end
+
+    MLStyle.@match c[1] begin
+            :concat_cvc     => concat_cvc(interpret_sygus(c[2], state), interpret_sygus(c[3], state))
+            :replace_cvc    => replace_cvc(interpret_sygus(c[2], state), interpret_sygus(c[3], state), interpret_sygus(c[4], state))
+            :at_cvc         => at_cvc(interpret_sygus(c[2], state), interpret_sygus(c[3], state))
+            :int_to_str_cvc => int_to_str_cvc(interpret_sygus(c[2], state))
+            :substr_cvc     => substr_cvc(interpret_sygus(c[2], state), interpret_sygus(c[3], state), interpret_sygus(c[4], state))
+            :len_cvc        => len_cvc(interpret_sygus(c[2], state))
+            :str_to_int_cvc => str_to_int_cvc(interpret_sygus(c[2], state))
+            :indexof_cvc    => indexof_cvc(interpret_sygus(c[2], state), interpret_sygus(c[3], state), interpret_sygus(c[4], state))
+            :prefixof_cvc   => prefixof_cvc(interpret_sygus(c[2], state), interpret_sygus(c[3], state))
+            :suffixof_cvc   => suffixof_cvc(interpret_sygus(c[2], state), interpret_sygus(c[3], state))
+            :contains_cvc   => contains_cvc(interpret_sygus(c[2], state), interpret_sygus(c[3], state))
+            
+            :+              => interpret_sygus(c[2], state) + interpret_sygus(c[3], state)
+            :-              => interpret_sygus(c[2], state) - interpret_sygus(c[3], state)
+            :(==)           => interpret_sygus(c[2], state) == interpret_sygus(c[3], state)
+
+            _               => error("huilen")
+    end
+end

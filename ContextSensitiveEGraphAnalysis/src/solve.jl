@@ -13,6 +13,7 @@ using IterTools
 function solve(examples, grammar, grammar_root, variables, ::Type{AllTypes}, ::Type{CVec}, num_solutions=1, up_to_size=3) where {AllTypes, CVec}
     println("create termset")
     ungrouped_termset, solutions_per_example = create_termset(examples, grammar, grammar_root, variables, AllTypes, num_solutions, up_to_size)
+    
     println(solutions_per_example)
     #TODO TEMPORARY; to get beyond creating termset in debugger
     # ungrouped_termset = Set(Union{Int64, Expr, Symbol}[:(3 + 0), :(2 + 3), :(x * 1), :(1 + 2), 0, :(3 * 2), :(0 * 0), :(1 * 1), :(x * 3), :(2 + 2), :x, :(0 + 1), :(2 * 1), :(x + 1), :(1 * 3), :(1 + 0), :(1 * x), :(3 * 0), :(0 + 3), :(1 + x), :(x * 2), :(2 * 3), :(x + 3), :(2 + 0), :(2 + x), :(3 + 1), :(1 * 2), :(x * x), :(0 + 2), :(3 + 3), 1, :(2 * 2), :(x * 0), :(x + 2), :(x + x), :(0 * 1), 3, :(1 * 0), :(3 + 2), :(0 * 3), :(0 + x), :(0 * x), :(0 + 0), :(1 + 1), :(2 * 0), :(x + 0), :(3 * 1), :(2 * x), :(3 + x), 2, :(2 + 1), :(1 + 3), :(0 * 2), :(3 * 3), :(3 * x)])
@@ -20,11 +21,10 @@ function solve(examples, grammar, grammar_root, variables, ::Type{AllTypes}, ::T
 
     grouped_termset,max_operator_count = group_by_operator_count(ungrouped_termset)
 
-    println(grouped_termset)
-
     println("termset created\n")
     println("Find rules")
 
+    Ruler.interpret_function = interpret_sygus
     all_rules = Dict()
     for (n,example) in enumerate(examples)
         var_to_value = example[1].in
@@ -36,6 +36,7 @@ function solve(examples, grammar, grammar_root, variables, ::Type{AllTypes}, ::T
         #println(Ruler.variable_cvec())
         T,R = ruler(max_operator_count, grouped_termset, variables, CVec)
         all_rules[n] = R
+        Ruler.cvec_to_classes = Dict()
     
         println("Found $(length(R)) rules for input $var_to_value")
         println(R)

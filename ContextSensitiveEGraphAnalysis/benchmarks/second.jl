@@ -32,7 +32,7 @@ pair = get_problem_grammar_pair(PBE_SLIA_Track_2019, "12948338")
 g = pair.grammar
 examples = map(example -> [example], pair.problem.spec)
     
-solution = solve(examples, g, :Start, [:_arg_1,:_arg_2], Union{String, Int, Bool, Expr, Symbol}, Union{String, Int, Bool}, 3, 3)
+solution = solve(examples, g, :Start, [:_arg_1,:_arg_2], Union{String, Int, Bool, Expr, Symbol}, Union{String, Int, Bool}, 1, 3)
 println(solution)
 
 #println("Obtaining problems")

@@ -138,6 +138,91 @@ function remove_symbol_type(e, variables)
     return expr
 end
 
+# TODO add heuristic for choosing the best rule
+# Ruler’s syntactic heuristic prefers candidates with the following characteristics (lexicographically): 
+# more distinct variables, fewer constants, shorter larger side (between the two terms forming the candidate), 
+# shorter smaller side, and fewer distinct operators.
+
+#
+function count_distinct_variables(lhs, rhs, vars)
+    count = 0
+    for v in vars
+        if contains_variable(lhs, v) || contains_variable(rhs, v)
+            count += 1
+        end
+    end
+    return count
+end
+
+function count_constants(expr, vars)
+    if typeof(expr) == Expr 
+        count = 0
+        for arg in expr.args
+            if typeof(arg) == Expr
+                count += count_constants(arg, vars)
+            elseif typeof(expr) == Symbol && expr ∉ vars && expr != :any #TODO keep any?
+                count += 1
+            end
+        end
+        return count
+    elseif typeof(expr) == Symbol && expr ∉ vars && expr != :any
+        return 1
+    end
+    return 0
+end
+
+function compare_rules(fst1, fst2, snd1, snd2, vars)
+    # First criterion: more distinct variables (so descending order)
+    v1 = count_distinct_variables(fst1, fst2, vars)
+    v2 = count_distinct_variables(snd1, snd2, vars)
+    if v1 != v2
+        return v1 > v2
+    end
+
+    # Second criterion: fewer constants
+    c1 = count_constants(fst1, vars) + count_constants(fst2, vars)
+    c2 = count_constants(snd1, vars) + count_constants(snd2, vars)
+    if c1 != c2
+        return c1 < c2
+    end
+
+    fst1_length,fst2_length = count_operators(fst1),count_operators(fst2)
+    snd1_length,snd2_length = count_operators(snd1),count_operators(snd2)
+
+    # Third criterion: shorter larger side
+    fstmax = max(fst1_length, fst2_length)
+    sndmax = max(snd1_length, snd2_length)
+    if fstmax != sndmax
+        return fstmax < sndmax
+    end
+
+    # Fourth criterion: shorter smaller side
+    fstmin = min(fst1_length, fst2_length)
+    sndmin = min(snd1_length, snd2_length)
+    if fstmin != sndmin
+        return fstmin < sndmin
+    end
+
+    return true
+
+    # Fifth criterion: fewer distinct operators TODO
+    # o1 = count_distinct_operators(rule1)
+    # o2 = count_distinct_operators(rule2)
+    # return o1 < o2
+end
+
+function sort_rules!(rules,vars)
+    Base.sort!(rules, 
+               by = r -> [replace_back_to_expr(r.lhs_original,vars), 
+                          replace_back_to_expr(r.rhs_original,vars)], 
+               lt = (r1, r2) -> compare_rules(r1[1],r1[2], r2[1],r2[2], vars))
+end
+
+
+#measure side length of operators 
+
+
+
 bvneg_cvc(n::UInt) = -n
 bvnot_cvc(n::UInt) = ~n
 bvadd_cvc(n1::UInt, n2::UInt) = n1 + n2
