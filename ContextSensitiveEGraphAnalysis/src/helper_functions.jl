@@ -29,17 +29,17 @@ end
 
 function group_by_operator_count(terms::Set{AllTypes})::Tuple{Dict{Int, Vector{AllTypes}}, Int} where {AllTypes}
     grouped = Dict{Int, Vector{AllTypes}}()
-    max_count = 0
+    counts = []
     for term in terms
         count = count_operators(term)
         if haskey(grouped, count)
             push!(grouped[count], term)
         else
-            max_count = max(max_count, count)
+            push!(counts, count)
             grouped[count] = [term]
         end
     end
-    return grouped, max_count
+    return grouped, counts
 end
 
 function replace_with_symbol(e, variables)

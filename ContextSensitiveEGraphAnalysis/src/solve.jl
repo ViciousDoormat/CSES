@@ -19,7 +19,7 @@ function solve(examples, grammar, grammar_root, variables, ::Type{AllTypes}, ::T
     # ungrouped_termset = Set(Union{Int64, Expr, Symbol}[:(3 + 0), :(2 + 3), :(x * 1), :(1 + 2), 0, :(3 * 2), :(0 * 0), :(1 * 1), :(x * 3), :(2 + 2), :x, :(0 + 1), :(2 * 1), :(x + 1), :(1 * 3), :(1 + 0), :(1 * x), :(3 * 0), :(0 + 3), :(1 + x), :(x * 2), :(2 * 3), :(x + 3), :(2 + 0), :(2 + x), :(3 + 1), :(1 * 2), :(x * x), :(0 + 2), :(3 + 3), 1, :(2 * 2), :(x * 0), :(x + 2), :(x + x), :(0 * 1), 3, :(1 * 0), :(3 + 2), :(0 * 3), :(0 + x), :(0 * x), :(0 + 0), :(1 + 1), :(2 * 0), :(x + 0), :(3 * 1), :(2 * x), :(3 + x), 2, :(2 + 1), :(1 + 3), :(0 * 2), :(3 * 3), :(3 * x)])
     # solutions_per_example = Dict{Any, Any}(0 => Any[:(x + 1)], 1 => Any[:(3 * x)])
 
-    grouped_termset,max_operator_count = group_by_operator_count(ungrouped_termset)
+    grouped_termset,counts = group_by_operator_count(ungrouped_termset)
 
     println("termset created\n")
     println("Find rules")
@@ -34,7 +34,7 @@ function solve(examples, grammar, grammar_root, variables, ::Type{AllTypes}, ::T
     
         Ruler.variable_cvec = (var::Symbol) -> [var_to_value[var]]
         #println(Ruler.variable_cvec())
-        T,R = ruler(max_operator_count, grouped_termset, variables, CVec)
+        T,R = ruler(sort(counts), grouped_termset, variables, CVec)
         all_rules[n] = R
         Ruler.cvec_to_classes = Dict()
     

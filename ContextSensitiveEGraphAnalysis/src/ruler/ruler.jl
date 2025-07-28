@@ -144,7 +144,7 @@ Returns a collection of rewrite rules from pairs of eclasses that have the same 
 If two eclasses were seen before and proven unequal, the rule they form should not be in the output.
 """
 function cvec_match(g::EGraph{Expr, Vector{CVec}}, variables::Vector{Symbol}, ::Type{CVec})::Vector{RewriteRule} where {CVec}
-    eclasses = g.classes
+    #eclasses = g.classes
     # All candidate rules found
     C::Vector{RewriteRule} = []
 
@@ -153,11 +153,11 @@ function cvec_match(g::EGraph{Expr, Vector{CVec}}, variables::Vector{Symbol}, ::
         for i in 1:(length(candidates)-1)
             loading_bar(i, length(candidates))
             key_x = candidates[i]
-            x::Vector{CVec} = eclasses[key_x].data
+            #x::Vector{CVec} = eclasses[key_x].data
     
             for j in (i+1):length(candidates)
                 key_y = candidates[j]   
-                y::Vector{CVec} = eclasses[key_y].data
+                #y::Vector{CVec} = eclasses[key_y].data
                 # If the cvecs match, and the classes are not proven unequal, create a candidate rule
                 #TODO note: equal cvecs removed because already checked when adding to cvec_to_classes
                 #TODO BUT, this only works for me cause I have cvecs of size 1
@@ -223,12 +223,12 @@ function run_rewrites!(T::EGraph{Expr, Vector{CVec}}, R::Vector{RewriteRule}) wh
     @invokelatest saturate!(g, R)
     println("saturation done")
 
-    initial_classes = Set(c.val for c in keys(T.classes))
+    #initial_classes = Set(c.val for c in keys(T.classes))
 
     # It then copies the newly learned equalities (e-class merges) back to the original e-graph. 
     # This avoids polluting the e-graph with terms added during equality saturation.
     
-    for initial in initial_classes
+    for initial in keys(T.classes) 
         final = find(g, g.uf.parents[Int(initial)])
         if initial != final 
             Metatheory.EGraphs.union!(T, UInt(initial), UInt(final))
@@ -345,26 +345,35 @@ Select the "best" set of rules from the candidate set C
 If n=Inf, the minimal set of rules that, together with the already found rules, can prove all other valid rules
 """
 function choose_eqs(R::Vector{RewriteRule}, C::Vector{RewriteRule}, variables, ::Type{CVec}, n=Inf)::Vector{RewriteRule} where {CVec}
-    step = 1
-    #for step in 101:-10:1 # TODO why this arbitrary iteration system
+    # C has n rules. start with step == n/2
+    #do this until C < 201
+    # then the 100 approach
+    old_length = length(C)
+    while length(C) < old_length
+        old_length = length(C)
+        step = n ÷ 2 #maybe 3?
+        C = choose_eqs_n(R::Vector{RewriteRule}, C::Vector{RewriteRule}, n, step, variables, CVec)
+    end
+    
+    for step in 101:-10:1 # TODO why this arbitrary iteration system
         println("step $step")
         if step ≤ n
             C = choose_eqs_n(R::Vector{RewriteRule}, C::Vector{RewriteRule}, n, step, variables, CVec)
         end
-    #end
+    end
     return C
 end
 
 """
 Find the minimal set of rewrite rules that can prove all equalities in a term set T
 """
-function ruler(iterations::Int, D::Dict{Int, Vector{AllTypes}}, variables::Vector{Symbol}, ::Type{CVec}) where {AllTypes, CVec}
+function ruler(counts::Vector{Int}, D::Dict{Int, Vector{AllTypes}}, variables::Vector{Symbol}, ::Type{CVec}) where {AllTypes, CVec}
     # Start with an empty E-Graph and no rewrite rules
     T = EGraph{Expr, Vector{CVec}}() 
     R::Vector{RewriteRule} = []
 
-    for i in 0:iterations
-        println("Iteration $i of $iterations, add terms to T")
+    for i in counts
+        println("Iteration $i of $(length(counts)), add terms to T")
         # Add a batch of terms from the term set to T
         add_terms!(T, D, i) 
         
