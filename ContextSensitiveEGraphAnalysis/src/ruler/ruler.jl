@@ -223,26 +223,17 @@ function run_rewrites!(T::EGraph{Expr, Vector{CVec}}, R::Vector{RewriteRule}) wh
     @invokelatest saturate!(g, R)
     println("saturation done")
 
-    #initial_classes = Set(c.val for c in keys(T.classes))
-
     # It then copies the newly learned equalities (e-class merges) back to the original e-graph. 
     # This avoids polluting the e-graph with terms added during equality saturation.
     
     for initial in keys(T.classes) 
+        initial = initial.val
         final = find(g, g.uf.parents[Int(initial)])
         if initial != final 
             Metatheory.EGraphs.union!(T, UInt(initial), UInt(final))
         end
     end
     
-    
-    
-    # for (initial, intermediate) in enumerate(g.uf.parents)
-    #     final = find(g, intermediate)
-    #     if initial != final && initial in initial_classes && intermediate in initial_classes
-    #         Metatheory.EGraphs.union!(T, UInt(initial), UInt(final))
-    #     end
-    # end
     # Finally, make sure that everywhere where the old eclass is used, it is replaced with the one it got merged with  
     rebuild!(T)
 end
@@ -313,6 +304,7 @@ function choose_eqs_n(R::Vector{RewriteRule}, C::Vector{RewriteRule}, n, step, v
     # more distinct variables, fewer constants, shorter larger side (between the two terms forming the candidate), 
     # shorter smaller side, and fewer distinct operators.
     while !isempty(C)
+        unique!(r -> [r.lhs_original, r.rhs_original], C)
         sort_rules!(C, variables)
         # Select step best rules from C according to a heurstic.
         until = min(step, length(C))
@@ -335,7 +327,6 @@ function choose_eqs_n(R::Vector{RewriteRule}, C::Vector{RewriteRule}, n, step, v
         println("shrink")
         C = shrink(R ∪ K, C, variables, CVec)
         println("shrink done")
-        unique!(r -> [r.lhs_original, r.rhs_original], C) #TODO needed? somewhere else?
     end
     return K
 end
@@ -349,7 +340,7 @@ function choose_eqs(R::Vector{RewriteRule}, C::Vector{RewriteRule}, variables, :
     #do this until C < 201
     # then the 100 approach
     old_length = length(C)
-    while length(C) < old_length
+    while length(C) < old_length && length(C) > 200
         old_length = length(C)
         step = n ÷ 2 #maybe 3?
         C = choose_eqs_n(R::Vector{RewriteRule}, C::Vector{RewriteRule}, n, step, variables, CVec)

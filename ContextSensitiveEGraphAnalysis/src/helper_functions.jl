@@ -27,9 +27,9 @@ function count_operators(e::Union{AllTypes})::Int where {AllTypes}
     return count
 end
 
-function group_by_operator_count(terms::Set{AllTypes})::Tuple{Dict{Int, Vector{AllTypes}}, Int} where {AllTypes}
+function group_by_operator_count(terms::Set{AllTypes})::Tuple{Dict{Int, Vector{AllTypes}}, Vector{Int}} where {AllTypes}
     grouped = Dict{Int, Vector{AllTypes}}()
-    counts = []
+    counts::Vector{Int} = []
     for term in terms
         count = count_operators(term)
         if haskey(grouped, count)
@@ -39,7 +39,7 @@ function group_by_operator_count(terms::Set{AllTypes})::Tuple{Dict{Int, Vector{A
             grouped[count] = [term]
         end
     end
-    return grouped, counts
+    return grouped, sort(counts)
 end
 
 function replace_with_symbol(e, variables)

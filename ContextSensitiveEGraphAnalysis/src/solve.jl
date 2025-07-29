@@ -34,7 +34,7 @@ function solve(examples, grammar, grammar_root, variables, ::Type{AllTypes}, ::T
     
         Ruler.variable_cvec = (var::Symbol) -> [var_to_value[var]]
         #println(Ruler.variable_cvec())
-        T,R = ruler(sort(counts), grouped_termset, variables, CVec)
+        T,R = ruler(counts, grouped_termset, variables, CVec)
         all_rules[n] = R
         Ruler.cvec_to_classes = Dict()
     

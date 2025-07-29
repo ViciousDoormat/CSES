@@ -49,7 +49,9 @@ end
 
 @testset "group_by_operator_count" begin
     @test group_by_operator_count(Set([:x, :1, :(x+1), :(1+x), :(x+y), :(1+(1+x)), :((x+1)+1), :(1+(1+1)), :((1+(-x))+1), :(1-(-x))])) == 
-    (Dict{Int64, Vector{Any}}(0 => [1, :x], 2 => [:(1 + (1 + x)), :((x + 1) + 1), :(1 + (1 + 1)), :(1 - -x)], 3 => [:((1 + -x) + 1)], 1 => [:(1 + x), :(x + y), :(x + 1)]), 3)
+    (Dict{Int64, Vector{Any}}(0 => [1, :x], 2 => [:(1 + (1 + x)), :((x + 1) + 1), :(1 + (1 + 1)), :(1 - -x)], 3 => [:((1 + -x) + 1)], 1 => [:(1 + x), :(x + y), :(x + 1)]), [0,1,2,3])
+    @test group_by_operator_count(Set([:x, :(1+(1+x))])) == 
+    (Dict{Int64, Vector{Any}}(0 => [:x], 2 => [:(1 + (1 + x))]), [0,2])
 end 
 
 @testset "replace_with_symbol" begin
@@ -121,7 +123,9 @@ end
     @test compare_rules(:(x+(y+z)),:(a+(b+c)),:(x+(y+z)),:(a+(b+(c+c))),[:x,:y,:z,:a,:b,:c]) == true #left has shorter smaller side
 end
 
-xs = [[:(x+(y+z)),:(a+(b+c))],[:(z+(y+x)),:(c+(b+a))], [:(x+(y+z)),:(a+(b+c))],[:(x+(a+c)),:(b+(y+z))],[:(x+(y+z)),:(a+(b+c))],[:(x+y),:(a+b)],
-[:(x+y),:(a+b)],[:(x+(y+y)),:(a+(b+b))],[:(x+(y+(z+x))),:(a+(b+c))],[:(x+(y+(z+1))),:(a+(b+c))],[:(x+(y+z)),:(a+(b+c))],[:(x+y),:(x+(y+(z+(a+(b+c)))))],[:(x+(y+z)),:(a+(b+c))],[:(x+(y+z)),:(a+(b+(c+c)))]]
-vars = [:x,:y,:z,:a,:b,:c]
-sort_rules(xs,vars)
+# xs = [[:(x+(y+z)),:(a+(b+c))],[:(z+(y+x)),:(c+(b+a))], [:(x+(y+z)),:(a+(b+c))],[:(x+(a+c)),:(b+(y+z))],[:(x+(y+z)),:(a+(b+c))],[:(x+y),:(a+b)],
+# [:(x+y),:(a+b)],[:(x+(y+y)),:(a+(b+b))],[:(x+(y+(z+x))),:(a+(b+c))],[:(x+(y+(z+1))),:(a+(b+c))],[:(x+(y+z)),:(a+(b+c))],[:(x+y),:(x+(y+(z+(a+(b+c)))))],[:(x+(y+z)),:(a+(b+c))],[:(x+(y+z)),:(a+(b+(c+c)))]]
+
+
+# vars = [:x,:y,:z,:a,:b,:c]
+# sort_rules!(xs,vars)

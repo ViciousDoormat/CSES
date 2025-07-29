@@ -7,12 +7,13 @@ using .Ruler
 using Test
 using Metatheory
 
-Ruler.variable_cvec = (_) -> [1]
-Ruler.interpret_function = eval
-T = EGraph{Expr,Vector{Int}}(:(a+0))
-rules::Vector{RewriteRule} = [@rule x x+0 == x]
+# Ruler.variable_cvec = (_) -> [1]
+# Ruler.interpret_function = eval
+# T = EGraph{Expr,Vector{Int}}(:(a+0))
+# rules::Vector{RewriteRule} = [@rule x x+0 == x]
 
-Ruler.run_rewrites!(T, rules)
+# Ruler.run_rewrites!(T, rules)
+# println(T)
 
 #create_rewrite_rule tests
 
@@ -56,7 +57,7 @@ Ruler.run_rewrites!(T, rules)
 # saturate!(g, t)
 # println(g)
 
-# #CVEC tests
+#CVEC tests
 
 # Ruler.variable_cvec = (_) -> [1]
 # Ruler.interpret_function = eval
@@ -90,11 +91,13 @@ Ruler.run_rewrites!(T, rules)
 # Ruler.cvec_to_classes = Dict()
 
 # #Ruler final full tests
-# D::Dict{Int,Vector{Union{Int,Symbol,Expr}}} = Dict([(0, [:(2), :(x), :(1)]),(1, [:(2*x)]),(2, [:((2*x)+1)])])
-# println(Ruler.ruler(2, D, [:x], Int))
+# D::Dict{Int,Vector{Union{Int,Symbol,Expr}}} = Dict([(0, [:(2), :(x), :(1)]), (1, [:(2*x)]), (2, [:((2*x)+1)])])
+# println(Ruler.ruler([0,1,2], D, [:x], Int))
 
+# Ruler.variable_cvec = (_) -> [1]
+# Ruler.interpret_function = eval
 # D::Dict{Int,Vector{Union{Int,Symbol,Expr}}} = Dict([(0, [:(2), :(x), :(1)]),(1, [:(2*x), :(x+2), :(2+x)])])
-# println(Ruler.ruler(1, D, [:x], Int))
+# println(Ruler.ruler([0,1], D, [:x], Int))
 
 # Ruler.variable_cvec = (_) -> [true]
 
@@ -108,9 +111,11 @@ Ruler.run_rewrites!(T, rules)
 #     @test isempty(Ruler.shrink(reduce(vcat, [r₂, r₃]), r₁, [:x], Bool))
 # end
 
-# Ruler.variable_cvec = (_) -> [true]
-# E::Dict{Int,Vector{Union{Bool,Expr,Symbol}}} = Dict([(0, [:(x), :(false)]),(1, [:(x ⊻ x), :(x && false)])])
-# println(Ruler.ruler(1, E, [:x], Bool))
+Ruler.variable_cvec = (_) -> [true]
+Ruler.interpret_function = eval
+Ruler.cvec_to_classes = Dict()
+E::Dict{Int,Vector{Union{Bool,Expr,Symbol}}} = Dict([(0, [:(x), :(false)]),(1, [:(x ⊻ x), :(x && false)])])
+println(Ruler.ruler([0,1], E, [:x], Bool))
 
 # #TODO test remaining pipeline parts
 
