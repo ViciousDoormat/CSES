@@ -148,7 +148,8 @@ function cvec_match(g::EGraph{Expr, Vector{CVec}}, variables::Vector{Symbol}, ::
     # All candidate rules found
     C::Vector{RewriteRule} = []
 
-    for candidates in values(cvec_to_classes)
+    for (turn,candidates) in enumerate(values(cvec_to_classes))
+        print("turn: ", turn, " ")
         #candidates = cvec_to_classes[key]
         for i in 1:(length(candidates)-1)
             loading_bar(i, length(candidates))
@@ -226,11 +227,31 @@ function run_rewrites!(T::EGraph{Expr, Vector{CVec}}, R::Vector{RewriteRule}) wh
     # It then copies the newly learned equalities (e-class merges) back to the original e-graph. 
     # This avoids polluting the e-graph with terms added during equality saturation.
     
+    # for initial in keys(T.classes) 
+    #     initial = initial.val
+    #     final = find(g, g.uf.parents[Int(initial)])
+    #     if initial != final 
+    #         Metatheory.EGraphs.union!(T, UInt(initial), UInt(final))
+    #     end
+    # end
+
+    destination_to_contained = Dict{Id, Vector{Id}}()
     for initial in keys(T.classes) 
         initial = initial.val
         final = find(g, g.uf.parents[Int(initial)])
-        if initial != final 
-            Metatheory.EGraphs.union!(T, UInt(initial), UInt(final))
+        if !haskey(destination_to_contained, final)
+            destination_to_contained[final] = []
+        end
+        push!(destination_to_contained[UInt(final)], UInt(initial))
+    end
+
+    for together in values(destination_to_contained)
+        if length(together) > 1
+            # If there are multiple eclasses that end up in the same eclass, merge them
+            main = together[1]
+            for join in together[2:end]
+                Metatheory.EGraphs.union!(T, main, join)
+            end
         end
     end
     
@@ -341,13 +362,14 @@ function choose_eqs(R::Vector{RewriteRule}, C::Vector{RewriteRule}, variables, :
     # then the 100 approach
     old_length = length(C)
     while length(C) < old_length && length(C) > 200
+        println("length of C: ", length(C))
         old_length = length(C)
         step = n ÷ 2 #maybe 3?
         C = choose_eqs_n(R::Vector{RewriteRule}, C::Vector{RewriteRule}, n, step, variables, CVec)
     end
     
-    for step in 101:-10:1 # TODO why this arbitrary iteration system
-        println("step $step")
+    for step in 101:-10:11 # TODO why this arbitrary iteration system
+        println("step $step, length: $(length(C))")
         if step ≤ n
             C = choose_eqs_n(R::Vector{RewriteRule}, C::Vector{RewriteRule}, n, step, variables, CVec)
         end
@@ -371,6 +393,7 @@ function ruler(counts::Vector{Int}, D::Dict{Int, Vector{AllTypes}}, variables::V
         println("Added terms to T, run cvec_match")
 
         # Find all candidate rewrite rules in T
+        run_rewrites!(T, R)
         C::Vector{RewriteRule} = cvec_match(T, variables, CVec)
 
         println("Found $(length(C)) candidate rules, select rules")

@@ -63,7 +63,7 @@ end
 
 # println(generate_small_terms(grammar3, 3, :Number, [[IOExample(Dict(:x => x), x)] for x ∈ 1:1]))
 
-println(create_termset(examples, grammar1, :Number, [:x], Union{Int,Expr,Symbol}))
+println(create_termset(examples, grammar1, :Number, [:y], Union{Int,Expr,Symbol}))
 
 
 # println(create_termset(examples, grammar))
