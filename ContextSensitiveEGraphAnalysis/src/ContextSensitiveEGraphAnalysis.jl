@@ -14,6 +14,6 @@ include("solve.jl")
 
 
 
-export solve, create_termset
+export solve, create_termset, find_solutions_per_example
 
 end # module ContextSensitiveEGraphAnalysis
