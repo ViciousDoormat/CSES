@@ -198,11 +198,105 @@ function add_constraints_12948338!(grammar)
     addconstraint!(grammar, Ordered(RuleNode(equals, [VarNode(:a), VarNode(:b)]), [:a, :b]))
 end
 
-function add_constraints_convert_text_to_numbers!(grammar)
+function add_constraints_remove_file_extension_from_filename!(grammar)
     arg1 = 2
     empty = 3
     space = 4
     dot = 5
+    concat = 6
+    replace = 7
+    at = 8
+    intstr = 9
+    ifstr = 10
+    substr = 11
+    one = 12
+    zero = 13
+    mone = 14
+    plus = 15
+    minus = 16
+    len = 17
+    strint = 18
+    ifnum = 19
+    indexof = 20
+    tru = 21
+    fls = 22
+    equals = 23
+    prefixof = 24
+    suffixof = 25
+    contains = 26
+
+    addconstraint!(grammar, Forbidden(RuleNode(concat, [VarNode(:A), RuleNode(empty)]))) # A + ""
+    addconstraint!(grammar, Forbidden(RuleNode(concat, [RuleNode(empty), VarNode(:A)]))) # "" + A
+
+    addconstraint!(grammar, Forbidden(RuleNode(replace, [VarNode(:A), VarNode(:B), VarNode(:B)]))) # A.replace(B, B)
+    
+    addconstraint!(grammar, Forbidden(RuleNode(strint, [RuleNode(intstr, [VarNode(:A)])]))) # str(int(A))
+    addconstraint!(grammar, Forbidden(RuleNode(intstr, [RuleNode(strint, [VarNode(:A)])]))) # int(str(A))
+
+    addconstraint!(grammar, Forbidden(RuleNode(ifstr, [VarNode(:A), VarNode(:B), VarNode(:B)]))) # if A then B else B
+    addconstraint!(grammar, Forbidden(RuleNode(ifnum, [VarNode(:A), VarNode(:B), VarNode(:B)]))) # if A then B else B
+
+    addconstraint!(grammar, Forbidden(RuleNode(plus, [VarNode(:A), zero]))) # A + 0
+    addconstraint!(grammar, Forbidden(RuleNode(plus, [zero, VarNode(:A)]))) # 0 + A
+    addconstraint!(grammar, Forbidden(RuleNode(minus, [VarNode(:A), zero]))) # A - 0
+
+    addconstraint!(grammar, Forbidden(RuleNode(equals, [VarNode(:A), VarNode(:A)]))) # A == A
+
+    addconstraint!(grammar, Forbidden(RuleNode(prefixof, [VarNode(:A), VarNode(:A)]))) # A.prefixof(A)
+    addconstraint!(grammar, Forbidden(RuleNode(prefixof, [RuleNode(empty), VarNode(:A)]))) # "".prefixof(A)
+
+    addconstraint!(grammar, Forbidden(RuleNode(suffixof, [VarNode(:A), VarNode(:A)]))) # A.suffixof(A)
+    addconstraint!(grammar, Forbidden(RuleNode(suffixof, [RuleNode(empty), VarNode(:A)]))) # "".suffixof(A)
+
+    addconstraint!(grammar, Forbidden(RuleNode(contains, [VarNode(:A), VarNode(:A)]))) # A.contains(A)
+    addconstraint!(grammar, Forbidden(RuleNode(contains, [VarNode(:A), RuleNode(empty)]))) # A.contains("")
+
+    addconstraint!(grammar, Unique(contains))
+    addconstraint!(grammar, Unique(suffixof))
+    addconstraint!(grammar, Unique(prefixof))
+
+    addconstraint!(grammar, Forbidden(RuleNode(len, [RuleNode(intstr, [VarNode(:A)])]))) # len(str(A::Int))
+
+    num_is_num = falses(26)      
+    num_is_num[12:14] .= true     
+
+    addconstraint!(grammar, Forbidden(RuleNode(equals, [DomainRuleNode(num_is_num),DomainRuleNode(num_is_num)])))
+
+    addconstraint!(grammar, Forbidden(RuleNode(ifstr, [RuleNode(tru), VarNode(:A), VarNode(:B)]))) # if true then A else B
+    addconstraint!(grammar, Forbidden(RuleNode(ifstr, [RuleNode(fls), VarNode(:A), VarNode(:B)]))) # if false then A else B
+    addconstraint!(grammar, Forbidden(RuleNode(ifnum, [RuleNode(tru), VarNode(:A), VarNode(:B)]))) # if true then A else B
+    addconstraint!(grammar, Forbidden(RuleNode(ifnum, [RuleNode(fls), VarNode(:A), VarNode(:B)]))) # if false then A else B
+    
+    
+    strings = falses(26)      
+    strings[3:5] .= true  
+    
+    addconstraint!(grammar, Forbidden(RuleNode(len, [DomainRuleNode(strings)]))) 
+
+    addconstraint!(grammar, Forbidden(RuleNode(replace, [DomainRuleNode(strings), VarNode(:A), VarNode(:B)]))) 
+    
+    addconstraint!(grammar, Forbidden(RuleNode(substr, [DomainRuleNode(strings), VarNode(:A), VarNode(:B)]))) 
+
+    addconstraint!(grammar, Forbidden(RuleNode(prefixof, [VarNode(:A), DomainRuleNode(strings)]))) 
+    
+    addconstraint!(grammar, Forbidden(RuleNode(prefixof, [RuleNode(at, [VarNode(:A), RuleNode(one)]), VarNode(:B)]))) 
+
+    addconstraint!(grammar, Forbidden(RuleNode(suffixof, [VarNode(:A), DomainRuleNode(strings)]))) 
+
+    addconstraint!(grammar, Forbidden(RuleNode(contains, [DomainRuleNode(strings), VarNode(:A)]))) 
+
+    addconstraint!(grammar, Forbidden(RuleNode(indexof, [DomainRuleNode(strings), VarNode(:A), VarNode(:B)]))) 
+
+    addconstraint!(grammar, Forbidden(RuleNode(contains, [VarNode(:A), DomainRuleNode(strings)])))
+
+    addconstraint!(grammar, Ordered(RuleNode(equals, [VarNode(:a), VarNode(:b)]), [:a, :b]))
+end
+
+function add_constraints_30732554!(grammar)
+    arg1 = 2
+    empty = 3
+    space = 4
+    stripe = 5
     concat = 6
     replace = 7
     at = 8
@@ -366,6 +460,198 @@ function add_constraints_44789427!(grammar)
     
     strings = falses(28)      
     strings[3:5] .= true  
+    
+    addconstraint!(grammar, Forbidden(RuleNode(len, [DomainRuleNode(strings)]))) 
+
+    addconstraint!(grammar, Forbidden(RuleNode(replace, [DomainRuleNode(strings), VarNode(:A), VarNode(:B)]))) 
+    
+    addconstraint!(grammar, Forbidden(RuleNode(substr, [DomainRuleNode(strings), VarNode(:A), VarNode(:B)]))) 
+
+    addconstraint!(grammar, Forbidden(RuleNode(prefixof, [VarNode(:A), DomainRuleNode(strings)]))) 
+    
+    addconstraint!(grammar, Forbidden(RuleNode(prefixof, [RuleNode(at, [VarNode(:A), RuleNode(one)]), VarNode(:B)]))) 
+
+    addconstraint!(grammar, Forbidden(RuleNode(suffixof, [VarNode(:A), DomainRuleNode(strings)]))) 
+
+    addconstraint!(grammar, Forbidden(RuleNode(contains, [DomainRuleNode(strings), VarNode(:A)]))) 
+
+    addconstraint!(grammar, Forbidden(RuleNode(indexof, [DomainRuleNode(strings), VarNode(:A), VarNode(:B)]))) 
+
+    addconstraint!(grammar, Forbidden(RuleNode(contains, [VarNode(:A), DomainRuleNode(strings)])))
+
+    addconstraint!(grammar, Ordered(RuleNode(equals, [VarNode(:a), VarNode(:b)]), [:a, :b]))
+end
+
+function add_constraints_remove_characters_from_left!(grammar)
+    arg1 = 2
+    arg2 = 11
+    empty = 3
+    space = 4
+    concat = 5
+    replace = 6
+    at = 7
+    intstr = 8
+    ifstr = 9
+    substr = 10
+    one = 12
+    zero = 13
+    mone = 14
+    plus = 15
+    minus = 16
+    len = 17
+    strint = 18
+    ifnum = 19
+    indexof = 20
+    tru = 21
+    fls = 22
+    equals = 23
+    prefixof = 24
+    suffixof = 25
+    contains = 26
+
+    addconstraint!(grammar, Forbidden(RuleNode(concat, [VarNode(:A), RuleNode(empty)]))) # A + ""
+    addconstraint!(grammar, Forbidden(RuleNode(concat, [RuleNode(empty), VarNode(:A)]))) # "" + A
+
+    addconstraint!(grammar, Forbidden(RuleNode(replace, [VarNode(:A), VarNode(:B), VarNode(:B)]))) # A.replace(B, B)
+    
+    addconstraint!(grammar, Forbidden(RuleNode(strint, [RuleNode(intstr, [VarNode(:A)])]))) # str(int(A))
+    addconstraint!(grammar, Forbidden(RuleNode(intstr, [RuleNode(strint, [VarNode(:A)])]))) # int(str(A))
+
+    addconstraint!(grammar, Forbidden(RuleNode(ifstr, [VarNode(:A), VarNode(:B), VarNode(:B)]))) # if A then B else B
+    addconstraint!(grammar, Forbidden(RuleNode(ifnum, [VarNode(:A), VarNode(:B), VarNode(:B)]))) # if A then B else B
+
+    addconstraint!(grammar, Forbidden(RuleNode(plus, [VarNode(:A), zero]))) # A + 0
+    addconstraint!(grammar, Forbidden(RuleNode(plus, [zero, VarNode(:A)]))) # 0 + A
+    addconstraint!(grammar, Forbidden(RuleNode(minus, [VarNode(:A), zero]))) # A - 0
+
+    addconstraint!(grammar, Forbidden(RuleNode(equals, [VarNode(:A), VarNode(:A)]))) # A == A
+
+    addconstraint!(grammar, Forbidden(RuleNode(prefixof, [VarNode(:A), VarNode(:A)]))) # A.prefixof(A)
+    addconstraint!(grammar, Forbidden(RuleNode(prefixof, [RuleNode(empty), VarNode(:A)]))) # "".prefixof(A)
+
+    addconstraint!(grammar, Forbidden(RuleNode(suffixof, [VarNode(:A), VarNode(:A)]))) # A.suffixof(A)
+    addconstraint!(grammar, Forbidden(RuleNode(suffixof, [RuleNode(empty), VarNode(:A)]))) # "".suffixof(A)
+
+    addconstraint!(grammar, Forbidden(RuleNode(contains, [VarNode(:A), VarNode(:A)]))) # A.contains(A)
+    addconstraint!(grammar, Forbidden(RuleNode(contains, [VarNode(:A), RuleNode(empty)]))) # A.contains("")
+
+    addconstraint!(grammar, Unique(contains))
+    addconstraint!(grammar, Unique(suffixof))
+    addconstraint!(grammar, Unique(prefixof))
+
+    addconstraint!(grammar, Forbidden(RuleNode(len, [RuleNode(intstr, [VarNode(:A)])]))) # len(str(A::Int))
+
+    num_is_num = falses(26)      
+    num_is_num[12:14] .= true     
+
+    addconstraint!(grammar, Forbidden(RuleNode(equals, [DomainRuleNode(num_is_num),DomainRuleNode(num_is_num)])))
+
+    addconstraint!(grammar, Forbidden(RuleNode(ifstr, [RuleNode(tru), VarNode(:A), VarNode(:B)]))) # if true then A else B
+    addconstraint!(grammar, Forbidden(RuleNode(ifstr, [RuleNode(fls), VarNode(:A), VarNode(:B)]))) # if false then A else B
+    addconstraint!(grammar, Forbidden(RuleNode(ifnum, [RuleNode(tru), VarNode(:A), VarNode(:B)]))) # if true then A else B
+    addconstraint!(grammar, Forbidden(RuleNode(ifnum, [RuleNode(fls), VarNode(:A), VarNode(:B)]))) # if false then A else B
+    
+    
+    strings = falses(26)      
+    strings[3:4] .= true  
+    
+    addconstraint!(grammar, Forbidden(RuleNode(len, [DomainRuleNode(strings)]))) 
+
+    addconstraint!(grammar, Forbidden(RuleNode(replace, [DomainRuleNode(strings), VarNode(:A), VarNode(:B)]))) 
+    
+    addconstraint!(grammar, Forbidden(RuleNode(substr, [DomainRuleNode(strings), VarNode(:A), VarNode(:B)]))) 
+
+    addconstraint!(grammar, Forbidden(RuleNode(prefixof, [VarNode(:A), DomainRuleNode(strings)]))) 
+    
+    addconstraint!(grammar, Forbidden(RuleNode(prefixof, [RuleNode(at, [VarNode(:A), RuleNode(one)]), VarNode(:B)]))) 
+
+    addconstraint!(grammar, Forbidden(RuleNode(suffixof, [VarNode(:A), DomainRuleNode(strings)]))) 
+
+    addconstraint!(grammar, Forbidden(RuleNode(contains, [DomainRuleNode(strings), VarNode(:A)]))) 
+
+    addconstraint!(grammar, Forbidden(RuleNode(indexof, [DomainRuleNode(strings), VarNode(:A), VarNode(:B)]))) 
+
+    addconstraint!(grammar, Forbidden(RuleNode(contains, [VarNode(:A), DomainRuleNode(strings)])))
+
+    addconstraint!(grammar, Ordered(RuleNode(equals, [VarNode(:a), VarNode(:b)]), [:a, :b]))
+end
+
+function add_constraints_19558979!(grammar)
+    arg1 = 2
+    arg2 = 11
+    empty = 3
+    space = 4
+    concat = 5
+    replace = 6
+    at = 7
+    intstr = 8
+    ifstr = 9
+    substr = 10
+    one = 12
+    zero = 13
+    mone = 14
+    two = 15
+    three = 16
+    four = 17
+    five = 18
+    plus = 19
+    minus = 20
+    len = 21
+    strint = 22
+    ifnum = 23
+    indexof = 24
+    tru = 25
+    fls = 26
+    equals = 27
+    prefixof = 28
+    suffixof = 29
+    contains = 30
+
+    addconstraint!(grammar, Forbidden(RuleNode(concat, [VarNode(:A), RuleNode(empty)]))) # A + ""
+    addconstraint!(grammar, Forbidden(RuleNode(concat, [RuleNode(empty), VarNode(:A)]))) # "" + A
+
+    addconstraint!(grammar, Forbidden(RuleNode(replace, [VarNode(:A), VarNode(:B), VarNode(:B)]))) # A.replace(B, B)
+    
+    addconstraint!(grammar, Forbidden(RuleNode(strint, [RuleNode(intstr, [VarNode(:A)])]))) # str(int(A))
+    addconstraint!(grammar, Forbidden(RuleNode(intstr, [RuleNode(strint, [VarNode(:A)])]))) # int(str(A))
+
+    addconstraint!(grammar, Forbidden(RuleNode(ifstr, [VarNode(:A), VarNode(:B), VarNode(:B)]))) # if A then B else B
+    addconstraint!(grammar, Forbidden(RuleNode(ifnum, [VarNode(:A), VarNode(:B), VarNode(:B)]))) # if A then B else B
+
+    addconstraint!(grammar, Forbidden(RuleNode(plus, [VarNode(:A), zero]))) # A + 0
+    addconstraint!(grammar, Forbidden(RuleNode(plus, [zero, VarNode(:A)]))) # 0 + A
+    addconstraint!(grammar, Forbidden(RuleNode(minus, [VarNode(:A), zero]))) # A - 0
+
+    addconstraint!(grammar, Forbidden(RuleNode(equals, [VarNode(:A), VarNode(:A)]))) # A == A
+
+    addconstraint!(grammar, Forbidden(RuleNode(prefixof, [VarNode(:A), VarNode(:A)]))) # A.prefixof(A)
+    addconstraint!(grammar, Forbidden(RuleNode(prefixof, [RuleNode(empty), VarNode(:A)]))) # "".prefixof(A)
+
+    addconstraint!(grammar, Forbidden(RuleNode(suffixof, [VarNode(:A), VarNode(:A)]))) # A.suffixof(A)
+    addconstraint!(grammar, Forbidden(RuleNode(suffixof, [RuleNode(empty), VarNode(:A)]))) # "".suffixof(A)
+
+    addconstraint!(grammar, Forbidden(RuleNode(contains, [VarNode(:A), VarNode(:A)]))) # A.contains(A)
+    addconstraint!(grammar, Forbidden(RuleNode(contains, [VarNode(:A), RuleNode(empty)]))) # A.contains("")
+
+    addconstraint!(grammar, Unique(contains))
+    addconstraint!(grammar, Unique(suffixof))
+    addconstraint!(grammar, Unique(prefixof))
+
+    addconstraint!(grammar, Forbidden(RuleNode(len, [RuleNode(intstr, [VarNode(:A)])]))) # len(str(A::Int))
+
+    num_is_num = falses(30)      
+    num_is_num[12:18] .= true     
+
+    addconstraint!(grammar, Forbidden(RuleNode(equals, [DomainRuleNode(num_is_num),DomainRuleNode(num_is_num)])))
+
+    addconstraint!(grammar, Forbidden(RuleNode(ifstr, [RuleNode(tru), VarNode(:A), VarNode(:B)]))) # if true then A else B
+    addconstraint!(grammar, Forbidden(RuleNode(ifstr, [RuleNode(fls), VarNode(:A), VarNode(:B)]))) # if false then A else B
+    addconstraint!(grammar, Forbidden(RuleNode(ifnum, [RuleNode(tru), VarNode(:A), VarNode(:B)]))) # if true then A else B
+    addconstraint!(grammar, Forbidden(RuleNode(ifnum, [RuleNode(fls), VarNode(:A), VarNode(:B)]))) # if false then A else B
+    
+    
+    strings = falses(30)      
+    strings[3:4] .= true  
     
     addconstraint!(grammar, Forbidden(RuleNode(len, [DomainRuleNode(strings)]))) 
 
@@ -762,6 +1048,273 @@ function add_constraints_change_negative_numbers_to_positive!(grammar)
     addconstraint!(grammar, Ordered(RuleNode(equals, [VarNode(:a), VarNode(:b)]), [:a, :b]))
 end
 
+function add_constraints_replace_one_character_with_another!(grammar)
+    arg1 = 2
+    empty = 3
+    space = 4
+    dash = 5
+    concat = 6
+    replace = 7
+    at = 8
+    intstr = 9
+    ifstr = 10
+    substr = 11
+    one = 12
+    zero = 13
+    mone = 14
+    plus = 15
+    minus = 16
+    len = 17
+    strint = 18
+    ifnum = 19
+    indexof = 20
+    tru = 21
+    fls = 22
+    equals = 23
+    prefixof = 24
+    suffixof = 25
+    contains = 26
+
+    addconstraint!(grammar, Forbidden(RuleNode(concat, [VarNode(:A), RuleNode(empty)]))) # A + ""
+    addconstraint!(grammar, Forbidden(RuleNode(concat, [RuleNode(empty), VarNode(:A)]))) # "" + A
+
+    addconstraint!(grammar, Forbidden(RuleNode(replace, [VarNode(:A), VarNode(:B), VarNode(:B)]))) # A.replace(B, B)
+    
+    addconstraint!(grammar, Forbidden(RuleNode(strint, [RuleNode(intstr, [VarNode(:A)])]))) # str(int(A))
+    addconstraint!(grammar, Forbidden(RuleNode(intstr, [RuleNode(strint, [VarNode(:A)])]))) # int(str(A))
+
+    addconstraint!(grammar, Forbidden(RuleNode(ifstr, [VarNode(:A), VarNode(:B), VarNode(:B)]))) # if A then B else B
+    addconstraint!(grammar, Forbidden(RuleNode(ifnum, [VarNode(:A), VarNode(:B), VarNode(:B)]))) # if A then B else B
+
+    addconstraint!(grammar, Forbidden(RuleNode(plus, [VarNode(:A), zero]))) # A + 0
+    addconstraint!(grammar, Forbidden(RuleNode(plus, [zero, VarNode(:A)]))) # 0 + A
+    addconstraint!(grammar, Forbidden(RuleNode(minus, [VarNode(:A), zero]))) # A - 0
+
+    addconstraint!(grammar, Forbidden(RuleNode(equals, [VarNode(:A), VarNode(:A)]))) # A == A
+
+    addconstraint!(grammar, Forbidden(RuleNode(prefixof, [VarNode(:A), VarNode(:A)]))) # A.prefixof(A)
+    addconstraint!(grammar, Forbidden(RuleNode(prefixof, [RuleNode(empty), VarNode(:A)]))) # "".prefixof(A)
+
+    addconstraint!(grammar, Forbidden(RuleNode(suffixof, [VarNode(:A), VarNode(:A)]))) # A.suffixof(A)
+    addconstraint!(grammar, Forbidden(RuleNode(suffixof, [RuleNode(empty), VarNode(:A)]))) # "".suffixof(A)
+
+    addconstraint!(grammar, Forbidden(RuleNode(contains, [VarNode(:A), VarNode(:A)]))) # A.contains(A)
+    addconstraint!(grammar, Forbidden(RuleNode(contains, [VarNode(:A), RuleNode(empty)]))) # A.contains("")
+
+    addconstraint!(grammar, Unique(contains))
+    addconstraint!(grammar, Unique(suffixof))
+    addconstraint!(grammar, Unique(prefixof))
+
+    addconstraint!(grammar, Forbidden(RuleNode(len, [RuleNode(intstr, [VarNode(:A)])]))) # len(str(A::Int))
+
+    num_is_num = falses(26)      
+    num_is_num[12:14] .= true     
+
+    addconstraint!(grammar, Forbidden(RuleNode(equals, [DomainRuleNode(num_is_num),DomainRuleNode(num_is_num)])))
+
+    addconstraint!(grammar, Forbidden(RuleNode(ifstr, [RuleNode(tru), VarNode(:A), VarNode(:B)]))) # if true then A else B
+    addconstraint!(grammar, Forbidden(RuleNode(ifstr, [RuleNode(fls), VarNode(:A), VarNode(:B)]))) # if false then A else B
+    addconstraint!(grammar, Forbidden(RuleNode(ifnum, [RuleNode(tru), VarNode(:A), VarNode(:B)]))) # if true then A else B
+    addconstraint!(grammar, Forbidden(RuleNode(ifnum, [RuleNode(fls), VarNode(:A), VarNode(:B)]))) # if false then A else B
+    
+    strings = falses(26)      
+    strings[3:5] .= true  
+    
+    addconstraint!(grammar, Forbidden(RuleNode(len, [DomainRuleNode(strings)]))) 
+
+    addconstraint!(grammar, Forbidden(RuleNode(replace, [DomainRuleNode(strings), VarNode(:A), VarNode(:B)]))) 
+    
+    addconstraint!(grammar, Forbidden(RuleNode(substr, [DomainRuleNode(strings), VarNode(:A), VarNode(:B)]))) 
+
+    addconstraint!(grammar, Forbidden(RuleNode(prefixof, [VarNode(:A), DomainRuleNode(strings)]))) 
+
+    addconstraint!(grammar, Forbidden(RuleNode(suffixof, [VarNode(:A), DomainRuleNode(strings)]))) 
+
+    addconstraint!(grammar, Forbidden(RuleNode(contains, [DomainRuleNode(strings), VarNode(:A)]))) 
+
+    addconstraint!(grammar, Forbidden(RuleNode(indexof, [DomainRuleNode(strings), VarNode(:A), VarNode(:B)]))) 
+
+    addconstraint!(grammar, Ordered(RuleNode(equals, [VarNode(:a), VarNode(:b)]), [:a, :b]))
+end
+
+function add_constraints_remove_text_by_matching!(grammar)
+    arg1 = 2
+    empty = 3
+    space = 4
+    dash = 5
+    concat = 6
+    replace = 7
+    at = 8
+    intstr = 9
+    ifstr = 10
+    substr = 11
+    one = 12
+    zero = 13
+    mone = 14
+    plus = 15
+    minus = 16
+    len = 17
+    strint = 18
+    ifnum = 19
+    indexof = 20
+    tru = 21
+    fls = 22
+    equals = 23
+    prefixof = 24
+    suffixof = 25
+    contains = 26
+
+    addconstraint!(grammar, Forbidden(RuleNode(concat, [VarNode(:A), RuleNode(empty)]))) # A + ""
+    addconstraint!(grammar, Forbidden(RuleNode(concat, [RuleNode(empty), VarNode(:A)]))) # "" + A
+
+    addconstraint!(grammar, Forbidden(RuleNode(replace, [VarNode(:A), VarNode(:B), VarNode(:B)]))) # A.replace(B, B)
+    
+    addconstraint!(grammar, Forbidden(RuleNode(strint, [RuleNode(intstr, [VarNode(:A)])]))) # str(int(A))
+    addconstraint!(grammar, Forbidden(RuleNode(intstr, [RuleNode(strint, [VarNode(:A)])]))) # int(str(A))
+
+    addconstraint!(grammar, Forbidden(RuleNode(ifstr, [VarNode(:A), VarNode(:B), VarNode(:B)]))) # if A then B else B
+    addconstraint!(grammar, Forbidden(RuleNode(ifnum, [VarNode(:A), VarNode(:B), VarNode(:B)]))) # if A then B else B
+
+    addconstraint!(grammar, Forbidden(RuleNode(plus, [VarNode(:A), zero]))) # A + 0
+    addconstraint!(grammar, Forbidden(RuleNode(plus, [zero, VarNode(:A)]))) # 0 + A
+    addconstraint!(grammar, Forbidden(RuleNode(minus, [VarNode(:A), zero]))) # A - 0
+
+    addconstraint!(grammar, Forbidden(RuleNode(equals, [VarNode(:A), VarNode(:A)]))) # A == A
+
+    addconstraint!(grammar, Forbidden(RuleNode(prefixof, [VarNode(:A), VarNode(:A)]))) # A.prefixof(A)
+    addconstraint!(grammar, Forbidden(RuleNode(prefixof, [RuleNode(empty), VarNode(:A)]))) # "".prefixof(A)
+
+    addconstraint!(grammar, Forbidden(RuleNode(suffixof, [VarNode(:A), VarNode(:A)]))) # A.suffixof(A)
+    addconstraint!(grammar, Forbidden(RuleNode(suffixof, [RuleNode(empty), VarNode(:A)]))) # "".suffixof(A)
+
+    addconstraint!(grammar, Forbidden(RuleNode(contains, [VarNode(:A), VarNode(:A)]))) # A.contains(A)
+    addconstraint!(grammar, Forbidden(RuleNode(contains, [VarNode(:A), RuleNode(empty)]))) # A.contains("")
+
+    addconstraint!(grammar, Unique(contains))
+    addconstraint!(grammar, Unique(suffixof))
+    addconstraint!(grammar, Unique(prefixof))
+
+    addconstraint!(grammar, Forbidden(RuleNode(len, [RuleNode(intstr, [VarNode(:A)])]))) # len(str(A::Int))
+
+    num_is_num = falses(26)      
+    num_is_num[12:14] .= true     
+
+    addconstraint!(grammar, Forbidden(RuleNode(equals, [DomainRuleNode(num_is_num),DomainRuleNode(num_is_num)])))
+
+    addconstraint!(grammar, Forbidden(RuleNode(ifstr, [RuleNode(tru), VarNode(:A), VarNode(:B)]))) # if true then A else B
+    addconstraint!(grammar, Forbidden(RuleNode(ifstr, [RuleNode(fls), VarNode(:A), VarNode(:B)]))) # if false then A else B
+    addconstraint!(grammar, Forbidden(RuleNode(ifnum, [RuleNode(tru), VarNode(:A), VarNode(:B)]))) # if true then A else B
+    addconstraint!(grammar, Forbidden(RuleNode(ifnum, [RuleNode(fls), VarNode(:A), VarNode(:B)]))) # if false then A else B
+    
+    strings = falses(26)      
+    strings[3:5] .= true  
+    
+    addconstraint!(grammar, Forbidden(RuleNode(len, [DomainRuleNode(strings)]))) 
+
+    addconstraint!(grammar, Forbidden(RuleNode(replace, [DomainRuleNode(strings), VarNode(:A), VarNode(:B)]))) 
+    
+    addconstraint!(grammar, Forbidden(RuleNode(substr, [DomainRuleNode(strings), VarNode(:A), VarNode(:B)]))) 
+
+    addconstraint!(grammar, Forbidden(RuleNode(prefixof, [VarNode(:A), DomainRuleNode(strings)]))) 
+
+    addconstraint!(grammar, Forbidden(RuleNode(suffixof, [VarNode(:A), DomainRuleNode(strings)]))) 
+
+    addconstraint!(grammar, Forbidden(RuleNode(contains, [DomainRuleNode(strings), VarNode(:A)]))) 
+
+    addconstraint!(grammar, Forbidden(RuleNode(indexof, [DomainRuleNode(strings), VarNode(:A), VarNode(:B)]))) 
+
+    addconstraint!(grammar, Ordered(RuleNode(equals, [VarNode(:a), VarNode(:b)]), [:a, :b]))
+end
+
+function add_constraints_get_last_name_from_name_with_comma!(grammar)
+    arg1 = 2
+    empty = 3
+    space = 4
+    comma = 5
+    concat = 6
+    replace = 7
+    at = 8
+    intstr = 9
+    ifstr = 10
+    substr = 11
+    one = 12
+    zero = 13
+    mone = 14
+    plus = 15
+    minus = 16
+    len = 17
+    strint = 18
+    ifnum = 19
+    indexof = 20
+    tru = 21
+    fls = 22
+    equals = 23
+    prefixof = 24
+    suffixof = 25
+    contains = 26
+
+    addconstraint!(grammar, Forbidden(RuleNode(concat, [VarNode(:A), RuleNode(empty)]))) # A + ""
+    addconstraint!(grammar, Forbidden(RuleNode(concat, [RuleNode(empty), VarNode(:A)]))) # "" + A
+
+    addconstraint!(grammar, Forbidden(RuleNode(replace, [VarNode(:A), VarNode(:B), VarNode(:B)]))) # A.replace(B, B)
+    
+    addconstraint!(grammar, Forbidden(RuleNode(strint, [RuleNode(intstr, [VarNode(:A)])]))) # str(int(A))
+    addconstraint!(grammar, Forbidden(RuleNode(intstr, [RuleNode(strint, [VarNode(:A)])]))) # int(str(A))
+
+    addconstraint!(grammar, Forbidden(RuleNode(ifstr, [VarNode(:A), VarNode(:B), VarNode(:B)]))) # if A then B else B
+    addconstraint!(grammar, Forbidden(RuleNode(ifnum, [VarNode(:A), VarNode(:B), VarNode(:B)]))) # if A then B else B
+
+    addconstraint!(grammar, Forbidden(RuleNode(plus, [VarNode(:A), zero]))) # A + 0
+    addconstraint!(grammar, Forbidden(RuleNode(plus, [zero, VarNode(:A)]))) # 0 + A
+    addconstraint!(grammar, Forbidden(RuleNode(minus, [VarNode(:A), zero]))) # A - 0
+
+    addconstraint!(grammar, Forbidden(RuleNode(equals, [VarNode(:A), VarNode(:A)]))) # A == A
+
+    addconstraint!(grammar, Forbidden(RuleNode(prefixof, [VarNode(:A), VarNode(:A)]))) # A.prefixof(A)
+    addconstraint!(grammar, Forbidden(RuleNode(prefixof, [RuleNode(empty), VarNode(:A)]))) # "".prefixof(A)
+
+    addconstraint!(grammar, Forbidden(RuleNode(suffixof, [VarNode(:A), VarNode(:A)]))) # A.suffixof(A)
+    addconstraint!(grammar, Forbidden(RuleNode(suffixof, [RuleNode(empty), VarNode(:A)]))) # "".suffixof(A)
+
+    addconstraint!(grammar, Forbidden(RuleNode(contains, [VarNode(:A), VarNode(:A)]))) # A.contains(A)
+    addconstraint!(grammar, Forbidden(RuleNode(contains, [VarNode(:A), RuleNode(empty)]))) # A.contains("")
+
+    addconstraint!(grammar, Unique(contains))
+    addconstraint!(grammar, Unique(suffixof))
+    addconstraint!(grammar, Unique(prefixof))
+
+    addconstraint!(grammar, Forbidden(RuleNode(len, [RuleNode(intstr, [VarNode(:A)])]))) # len(str(A::Int))
+
+    num_is_num = falses(26)      
+    num_is_num[12:14] .= true     
+
+    addconstraint!(grammar, Forbidden(RuleNode(equals, [DomainRuleNode(num_is_num),DomainRuleNode(num_is_num)])))
+
+    addconstraint!(grammar, Forbidden(RuleNode(ifstr, [RuleNode(tru), VarNode(:A), VarNode(:B)]))) # if true then A else B
+    addconstraint!(grammar, Forbidden(RuleNode(ifstr, [RuleNode(fls), VarNode(:A), VarNode(:B)]))) # if false then A else B
+    addconstraint!(grammar, Forbidden(RuleNode(ifnum, [RuleNode(tru), VarNode(:A), VarNode(:B)]))) # if true then A else B
+    addconstraint!(grammar, Forbidden(RuleNode(ifnum, [RuleNode(fls), VarNode(:A), VarNode(:B)]))) # if false then A else B
+    
+    strings = falses(26)      
+    strings[3:5] .= true  
+    
+    addconstraint!(grammar, Forbidden(RuleNode(len, [DomainRuleNode(strings)]))) 
+
+    addconstraint!(grammar, Forbidden(RuleNode(replace, [DomainRuleNode(strings), VarNode(:A), VarNode(:B)]))) 
+    
+    addconstraint!(grammar, Forbidden(RuleNode(substr, [DomainRuleNode(strings), VarNode(:A), VarNode(:B)]))) 
+
+    addconstraint!(grammar, Forbidden(RuleNode(prefixof, [VarNode(:A), DomainRuleNode(strings)]))) 
+
+    addconstraint!(grammar, Forbidden(RuleNode(suffixof, [VarNode(:A), DomainRuleNode(strings)]))) 
+
+    addconstraint!(grammar, Forbidden(RuleNode(contains, [DomainRuleNode(strings), VarNode(:A)]))) 
+
+    addconstraint!(grammar, Forbidden(RuleNode(indexof, [DomainRuleNode(strings), VarNode(:A), VarNode(:B)]))) 
+
+    addconstraint!(grammar, Ordered(RuleNode(equals, [VarNode(:a), VarNode(:b)]), [:a, :b]))
+end
+
 function add_constraints_cell_contains_some_words_but_not_others!(grammar)
     arg1 = 2
     arg2 = 3
@@ -942,6 +1495,183 @@ function add_constraints_cell_contains_specific_text!(grammar)
     addconstraint!(grammar, Ordered(RuleNode(equals, [VarNode(:a), VarNode(:b)]), [:a, :b]))
 end
 
+function add_constraints_remove_unwanted_characters!(grammar)
+    arg1 = 2
+    arg2 = 3
+    empty = 4
+    space = 5
+    concat = 6
+    replace = 7
+    at = 8
+    intstr = 9
+    ifstr = 10
+    substr = 11
+    one = 12
+    zero = 13
+    mone = 14
+    plus = 15
+    minus = 16
+    len = 17
+    strint = 18
+    ifnum = 19
+    indexof = 20
+    tru = 21
+    fls = 22
+    equals = 23
+    prefixof = 24
+    suffixof = 25
+    contains = 26
+
+    addconstraint!(grammar, Forbidden(RuleNode(concat, [VarNode(:A), RuleNode(empty)]))) # A + ""
+    addconstraint!(grammar, Forbidden(RuleNode(concat, [RuleNode(empty), VarNode(:A)]))) # "" + A
+
+    addconstraint!(grammar, Forbidden(RuleNode(replace, [VarNode(:A), VarNode(:B), VarNode(:B)]))) # A.replace(B, B)
+    
+    addconstraint!(grammar, Forbidden(RuleNode(strint, [RuleNode(intstr, [VarNode(:A)])]))) # str(int(A))
+    addconstraint!(grammar, Forbidden(RuleNode(intstr, [RuleNode(strint, [VarNode(:A)])]))) # int(str(A))
+
+    addconstraint!(grammar, Forbidden(RuleNode(ifstr, [VarNode(:A), VarNode(:B), VarNode(:B)]))) # if A then B else B
+    addconstraint!(grammar, Forbidden(RuleNode(ifnum, [VarNode(:A), VarNode(:B), VarNode(:B)]))) # if A then B else B
+
+    addconstraint!(grammar, Forbidden(RuleNode(plus, [VarNode(:A), zero]))) # A + 0
+    addconstraint!(grammar, Forbidden(RuleNode(plus, [zero, VarNode(:A)]))) # 0 + A
+    addconstraint!(grammar, Forbidden(RuleNode(minus, [VarNode(:A), zero]))) # A - 0
+
+    addconstraint!(grammar, Forbidden(RuleNode(equals, [VarNode(:A), VarNode(:A)]))) # A == A
+
+    addconstraint!(grammar, Forbidden(RuleNode(prefixof, [VarNode(:A), VarNode(:A)]))) # A.prefixof(A)
+    addconstraint!(grammar, Forbidden(RuleNode(prefixof, [RuleNode(empty), VarNode(:A)]))) # "".prefixof(A)
+
+    addconstraint!(grammar, Forbidden(RuleNode(suffixof, [VarNode(:A), VarNode(:A)]))) # A.suffixof(A)
+    addconstraint!(grammar, Forbidden(RuleNode(suffixof, [RuleNode(empty), VarNode(:A)]))) # "".suffixof(A)
+
+    addconstraint!(grammar, Forbidden(RuleNode(contains, [VarNode(:A), VarNode(:A)]))) # A.contains(A)
+    addconstraint!(grammar, Forbidden(RuleNode(contains, [VarNode(:A), RuleNode(empty)]))) # A.contains("")
+
+    addconstraint!(grammar, Unique(contains))
+    addconstraint!(grammar, Unique(suffixof))
+    addconstraint!(grammar, Unique(prefixof))
+
+    addconstraint!(grammar, Forbidden(RuleNode(len, [RuleNode(intstr, [VarNode(:A)])]))) # len(str(A::Int))
+
+    num_is_num = falses(26)      
+    num_is_num[12:14] .= true     
+
+    addconstraint!(grammar, Forbidden(RuleNode(equals, [DomainRuleNode(num_is_num),DomainRuleNode(num_is_num)])))
+
+    addconstraint!(grammar, Forbidden(RuleNode(ifstr, [RuleNode(tru), VarNode(:A), VarNode(:B)]))) # if true then A else B
+    addconstraint!(grammar, Forbidden(RuleNode(ifstr, [RuleNode(fls), VarNode(:A), VarNode(:B)]))) # if false then A else B
+    addconstraint!(grammar, Forbidden(RuleNode(ifnum, [RuleNode(tru), VarNode(:A), VarNode(:B)]))) # if true then A else B
+    addconstraint!(grammar, Forbidden(RuleNode(ifnum, [RuleNode(fls), VarNode(:A), VarNode(:B)]))) # if false then A else B
+    
+    strings = falses(26)      
+    strings[4:5] .= true  
+    
+    addconstraint!(grammar, Forbidden(RuleNode(len, [DomainRuleNode(strings)]))) 
+
+    addconstraint!(grammar, Forbidden(RuleNode(replace, [DomainRuleNode(strings), VarNode(:A), VarNode(:B)]))) 
+    
+    addconstraint!(grammar, Forbidden(RuleNode(substr, [DomainRuleNode(strings), VarNode(:A), VarNode(:B)]))) 
+
+    addconstraint!(grammar, Forbidden(RuleNode(prefixof, [VarNode(:A), DomainRuleNode(strings)]))) 
+
+    addconstraint!(grammar, Forbidden(RuleNode(suffixof, [VarNode(:A), DomainRuleNode(strings)]))) 
+
+    addconstraint!(grammar, Forbidden(RuleNode(contains, [DomainRuleNode(strings), VarNode(:A)]))) 
+
+    addconstraint!(grammar, Forbidden(RuleNode(indexof, [DomainRuleNode(strings), VarNode(:A), VarNode(:B)]))) 
+
+    addconstraint!(grammar, Ordered(RuleNode(equals, [VarNode(:a), VarNode(:b)]), [:a, :b]))
+end
+
+function add_constraints_37281007!(grammar)
+    arg1 = 2
+    arg2 = 3
+    empty = 4
+    space = 5
+    concat = 6
+    replace = 7
+    at = 8
+    intstr = 9
+    ifstr = 10
+    substr = 11
+    one = 12
+    zero = 13
+    mone = 14
+    plus = 15
+    minus = 16
+    len = 17
+    strint = 18
+    ifnum = 19
+    indexof = 20
+    tru = 21
+    fls = 22
+    equals = 23
+    prefixof = 24
+    suffixof = 25
+    contains = 26
+
+    addconstraint!(grammar, Forbidden(RuleNode(concat, [VarNode(:A), RuleNode(empty)]))) # A + ""
+    addconstraint!(grammar, Forbidden(RuleNode(concat, [RuleNode(empty), VarNode(:A)]))) # "" + A
+
+    addconstraint!(grammar, Forbidden(RuleNode(replace, [VarNode(:A), VarNode(:B), VarNode(:B)]))) # A.replace(B, B)
+    
+    addconstraint!(grammar, Forbidden(RuleNode(strint, [RuleNode(intstr, [VarNode(:A)])]))) # str(int(A))
+    addconstraint!(grammar, Forbidden(RuleNode(intstr, [RuleNode(strint, [VarNode(:A)])]))) # int(str(A))
+
+    addconstraint!(grammar, Forbidden(RuleNode(ifstr, [VarNode(:A), VarNode(:B), VarNode(:B)]))) # if A then B else B
+    addconstraint!(grammar, Forbidden(RuleNode(ifnum, [VarNode(:A), VarNode(:B), VarNode(:B)]))) # if A then B else B
+
+    addconstraint!(grammar, Forbidden(RuleNode(plus, [VarNode(:A), zero]))) # A + 0
+    addconstraint!(grammar, Forbidden(RuleNode(plus, [zero, VarNode(:A)]))) # 0 + A
+    addconstraint!(grammar, Forbidden(RuleNode(minus, [VarNode(:A), zero]))) # A - 0
+
+    addconstraint!(grammar, Forbidden(RuleNode(equals, [VarNode(:A), VarNode(:A)]))) # A == A
+
+    addconstraint!(grammar, Forbidden(RuleNode(prefixof, [VarNode(:A), VarNode(:A)]))) # A.prefixof(A)
+    addconstraint!(grammar, Forbidden(RuleNode(prefixof, [RuleNode(empty), VarNode(:A)]))) # "".prefixof(A)
+
+    addconstraint!(grammar, Forbidden(RuleNode(suffixof, [VarNode(:A), VarNode(:A)]))) # A.suffixof(A)
+    addconstraint!(grammar, Forbidden(RuleNode(suffixof, [RuleNode(empty), VarNode(:A)]))) # "".suffixof(A)
+
+    addconstraint!(grammar, Forbidden(RuleNode(contains, [VarNode(:A), VarNode(:A)]))) # A.contains(A)
+    addconstraint!(grammar, Forbidden(RuleNode(contains, [VarNode(:A), RuleNode(empty)]))) # A.contains("")
+
+    addconstraint!(grammar, Unique(contains))
+    addconstraint!(grammar, Unique(suffixof))
+    addconstraint!(grammar, Unique(prefixof))
+
+    addconstraint!(grammar, Forbidden(RuleNode(len, [RuleNode(intstr, [VarNode(:A)])]))) # len(str(A::Int))
+
+    num_is_num = falses(26)      
+    num_is_num[12:14] .= true     
+
+    addconstraint!(grammar, Forbidden(RuleNode(equals, [DomainRuleNode(num_is_num),DomainRuleNode(num_is_num)])))
+
+    addconstraint!(grammar, Forbidden(RuleNode(ifstr, [RuleNode(tru), VarNode(:A), VarNode(:B)]))) # if true then A else B
+    addconstraint!(grammar, Forbidden(RuleNode(ifstr, [RuleNode(fls), VarNode(:A), VarNode(:B)]))) # if false then A else B
+    addconstraint!(grammar, Forbidden(RuleNode(ifnum, [RuleNode(tru), VarNode(:A), VarNode(:B)]))) # if true then A else B
+    addconstraint!(grammar, Forbidden(RuleNode(ifnum, [RuleNode(fls), VarNode(:A), VarNode(:B)]))) # if false then A else B
+    
+    strings = falses(26)      
+    strings[4:5] .= true  
+    
+    addconstraint!(grammar, Forbidden(RuleNode(len, [DomainRuleNode(strings)]))) 
+
+    addconstraint!(grammar, Forbidden(RuleNode(replace, [DomainRuleNode(strings), VarNode(:A), VarNode(:B)]))) 
+    
+    addconstraint!(grammar, Forbidden(RuleNode(substr, [DomainRuleNode(strings), VarNode(:A), VarNode(:B)]))) 
+
+    addconstraint!(grammar, Forbidden(RuleNode(prefixof, [VarNode(:A), DomainRuleNode(strings)]))) 
+
+    addconstraint!(grammar, Forbidden(RuleNode(suffixof, [VarNode(:A), DomainRuleNode(strings)]))) 
+
+    addconstraint!(grammar, Forbidden(RuleNode(contains, [DomainRuleNode(strings), VarNode(:A)]))) 
+
+    addconstraint!(grammar, Forbidden(RuleNode(indexof, [DomainRuleNode(strings), VarNode(:A), VarNode(:B)]))) 
+
+    addconstraint!(grammar, Ordered(RuleNode(equals, [VarNode(:a), VarNode(:b)]), [:a, :b]))
+end
 
 function add_constraints_convert_numbers_to_text!(grammar)
     arg1 = 10
@@ -953,6 +1683,285 @@ function add_constraints_convert_numbers_to_text!(grammar)
     intstr = 7
     ifstr = 8
     substr = 9
+    one = 11
+    zero = 12
+    mone = 13
+    plus = 14
+    minus = 15
+    len = 16
+    strint = 17
+    ifnum = 18
+    indexof = 19
+    tru = 20
+    fls = 21
+    equals = 22
+    prefixof = 23
+    suffixof = 24
+    contains = 25
+
+    addconstraint!(grammar, Forbidden(RuleNode(concat, [VarNode(:A), RuleNode(empty)]))) # A + ""
+    addconstraint!(grammar, Forbidden(RuleNode(concat, [RuleNode(empty), VarNode(:A)]))) # "" + A
+
+    addconstraint!(grammar, Forbidden(RuleNode(replace, [VarNode(:A), VarNode(:B), VarNode(:B)]))) # A.replace(B, B)
+    
+    addconstraint!(grammar, Forbidden(RuleNode(strint, [RuleNode(intstr, [VarNode(:A)])]))) # str(int(A))
+    addconstraint!(grammar, Forbidden(RuleNode(intstr, [RuleNode(strint, [VarNode(:A)])]))) # int(str(A))
+
+    addconstraint!(grammar, Forbidden(RuleNode(ifstr, [VarNode(:A), VarNode(:B), VarNode(:B)]))) # if A then B else B
+    addconstraint!(grammar, Forbidden(RuleNode(ifnum, [VarNode(:A), VarNode(:B), VarNode(:B)]))) # if A then B else B
+
+    addconstraint!(grammar, Forbidden(RuleNode(plus, [VarNode(:A), zero]))) # A + 0
+    addconstraint!(grammar, Forbidden(RuleNode(plus, [zero, VarNode(:A)]))) # 0 + A
+    addconstraint!(grammar, Forbidden(RuleNode(minus, [VarNode(:A), zero]))) # A - 0
+
+    addconstraint!(grammar, Forbidden(RuleNode(equals, [VarNode(:A), VarNode(:A)]))) # A == A
+
+    addconstraint!(grammar, Forbidden(RuleNode(prefixof, [VarNode(:A), VarNode(:A)]))) # A.prefixof(A)
+    addconstraint!(grammar, Forbidden(RuleNode(prefixof, [RuleNode(empty), VarNode(:A)]))) # "".prefixof(A)
+
+    addconstraint!(grammar, Forbidden(RuleNode(suffixof, [VarNode(:A), VarNode(:A)]))) # A.suffixof(A)
+    addconstraint!(grammar, Forbidden(RuleNode(suffixof, [RuleNode(empty), VarNode(:A)]))) # "".suffixof(A)
+
+    addconstraint!(grammar, Forbidden(RuleNode(contains, [VarNode(:A), VarNode(:A)]))) # A.contains(A)
+    addconstraint!(grammar, Forbidden(RuleNode(contains, [VarNode(:A), RuleNode(empty)]))) # A.contains("")
+
+    addconstraint!(grammar, Unique(contains))
+    addconstraint!(grammar, Unique(suffixof))
+    addconstraint!(grammar, Unique(prefixof))
+
+    addconstraint!(grammar, Forbidden(RuleNode(len, [RuleNode(intstr, [VarNode(:A)])]))) # len(str(A::Int))
+
+    num_is_num = falses(25)      
+    num_is_num[11:13] .= true     
+
+    addconstraint!(grammar, Forbidden(RuleNode(equals, [DomainRuleNode(num_is_num),DomainRuleNode(num_is_num)])))
+
+    addconstraint!(grammar, Forbidden(RuleNode(ifstr, [RuleNode(tru), VarNode(:A), VarNode(:B)]))) # if true then A else B
+    addconstraint!(grammar, Forbidden(RuleNode(ifstr, [RuleNode(fls), VarNode(:A), VarNode(:B)]))) # if false then A else B
+    addconstraint!(grammar, Forbidden(RuleNode(ifnum, [RuleNode(tru), VarNode(:A), VarNode(:B)]))) # if true then A else B
+    addconstraint!(grammar, Forbidden(RuleNode(ifnum, [RuleNode(fls), VarNode(:A), VarNode(:B)]))) # if false then A else B
+    
+    
+    addconstraint!(grammar, Forbidden(RuleNode(len, [RuleNode(space)]))) 
+    addconstraint!(grammar, Forbidden(RuleNode(len, [RuleNode(empty)]))) 
+
+    addconstraint!(grammar, Forbidden(RuleNode(replace, [RuleNode(space), VarNode(:A), VarNode(:B)]))) 
+    addconstraint!(grammar, Forbidden(RuleNode(replace, [RuleNode(empty), VarNode(:A), VarNode(:B)]))) 
+    
+    addconstraint!(grammar, Forbidden(RuleNode(substr, [RuleNode(space), VarNode(:A), VarNode(:B)]))) 
+    addconstraint!(grammar, Forbidden(RuleNode(substr, [RuleNode(empty), VarNode(:A), VarNode(:B)]))) 
+
+    addconstraint!(grammar, Forbidden(RuleNode(prefixof, [VarNode(:A), RuleNode(space)]))) 
+    addconstraint!(grammar, Forbidden(RuleNode(prefixof, [VarNode(:A), RuleNode(empty)]))) 
+
+    addconstraint!(grammar, Forbidden(RuleNode(suffixof, [VarNode(:A), RuleNode(space)]))) 
+    addconstraint!(grammar, Forbidden(RuleNode(suffixof, [VarNode(:A), RuleNode(empty)]))) 
+
+    addconstraint!(grammar, Forbidden(RuleNode(contains, [RuleNode(space), VarNode(:A)]))) 
+    addconstraint!(grammar, Forbidden(RuleNode(contains, [RuleNode(empty), VarNode(:A)]))) 
+
+    addconstraint!(grammar, Forbidden(RuleNode(indexof, [RuleNode(space), VarNode(:A), VarNode(:B)]))) 
+    addconstraint!(grammar, Forbidden(RuleNode(indexof, [RuleNode(empty), VarNode(:A), VarNode(:B)]))) 
+
+    addconstraint!(grammar, Ordered(RuleNode(equals, [VarNode(:a), VarNode(:b)]), [:a, :b]))
+end
+
+function add_constraints_convert_text_to_numbers!(grammar)
+    arg1 = 2
+    empty = 3
+    space = 4
+    concat = 5
+    replace = 6
+    at = 7
+    intstr = 8
+    ifstr = 9
+    substr = 10
+    one = 11
+    zero = 12
+    mone = 13
+    plus = 14
+    minus = 15
+    len = 16
+    strint = 17
+    ifnum = 18
+    indexof = 19
+    tru = 20
+    fls = 21
+    equals = 22
+    prefixof = 23
+    suffixof = 24
+    contains = 25
+
+    addconstraint!(grammar, Forbidden(RuleNode(concat, [VarNode(:A), RuleNode(empty)]))) # A + ""
+    addconstraint!(grammar, Forbidden(RuleNode(concat, [RuleNode(empty), VarNode(:A)]))) # "" + A
+
+    addconstraint!(grammar, Forbidden(RuleNode(replace, [VarNode(:A), VarNode(:B), VarNode(:B)]))) # A.replace(B, B)
+    
+    addconstraint!(grammar, Forbidden(RuleNode(strint, [RuleNode(intstr, [VarNode(:A)])]))) # str(int(A))
+    addconstraint!(grammar, Forbidden(RuleNode(intstr, [RuleNode(strint, [VarNode(:A)])]))) # int(str(A))
+
+    addconstraint!(grammar, Forbidden(RuleNode(ifstr, [VarNode(:A), VarNode(:B), VarNode(:B)]))) # if A then B else B
+    addconstraint!(grammar, Forbidden(RuleNode(ifnum, [VarNode(:A), VarNode(:B), VarNode(:B)]))) # if A then B else B
+
+    addconstraint!(grammar, Forbidden(RuleNode(plus, [VarNode(:A), zero]))) # A + 0
+    addconstraint!(grammar, Forbidden(RuleNode(plus, [zero, VarNode(:A)]))) # 0 + A
+    addconstraint!(grammar, Forbidden(RuleNode(minus, [VarNode(:A), zero]))) # A - 0
+
+    addconstraint!(grammar, Forbidden(RuleNode(equals, [VarNode(:A), VarNode(:A)]))) # A == A
+
+    addconstraint!(grammar, Forbidden(RuleNode(prefixof, [VarNode(:A), VarNode(:A)]))) # A.prefixof(A)
+    addconstraint!(grammar, Forbidden(RuleNode(prefixof, [RuleNode(empty), VarNode(:A)]))) # "".prefixof(A)
+
+    addconstraint!(grammar, Forbidden(RuleNode(suffixof, [VarNode(:A), VarNode(:A)]))) # A.suffixof(A)
+    addconstraint!(grammar, Forbidden(RuleNode(suffixof, [RuleNode(empty), VarNode(:A)]))) # "".suffixof(A)
+
+    addconstraint!(grammar, Forbidden(RuleNode(contains, [VarNode(:A), VarNode(:A)]))) # A.contains(A)
+    addconstraint!(grammar, Forbidden(RuleNode(contains, [VarNode(:A), RuleNode(empty)]))) # A.contains("")
+
+    addconstraint!(grammar, Unique(contains))
+    addconstraint!(grammar, Unique(suffixof))
+    addconstraint!(grammar, Unique(prefixof))
+
+    addconstraint!(grammar, Forbidden(RuleNode(len, [RuleNode(intstr, [VarNode(:A)])]))) # len(str(A::Int))
+
+    num_is_num = falses(25)      
+    num_is_num[11:13] .= true     
+
+    addconstraint!(grammar, Forbidden(RuleNode(equals, [DomainRuleNode(num_is_num),DomainRuleNode(num_is_num)])))
+
+    addconstraint!(grammar, Forbidden(RuleNode(ifstr, [RuleNode(tru), VarNode(:A), VarNode(:B)]))) # if true then A else B
+    addconstraint!(grammar, Forbidden(RuleNode(ifstr, [RuleNode(fls), VarNode(:A), VarNode(:B)]))) # if false then A else B
+    addconstraint!(grammar, Forbidden(RuleNode(ifnum, [RuleNode(tru), VarNode(:A), VarNode(:B)]))) # if true then A else B
+    addconstraint!(grammar, Forbidden(RuleNode(ifnum, [RuleNode(fls), VarNode(:A), VarNode(:B)]))) # if false then A else B
+    
+    
+    addconstraint!(grammar, Forbidden(RuleNode(len, [RuleNode(space)]))) 
+    addconstraint!(grammar, Forbidden(RuleNode(len, [RuleNode(empty)]))) 
+
+    addconstraint!(grammar, Forbidden(RuleNode(replace, [RuleNode(space), VarNode(:A), VarNode(:B)]))) 
+    addconstraint!(grammar, Forbidden(RuleNode(replace, [RuleNode(empty), VarNode(:A), VarNode(:B)]))) 
+    
+    addconstraint!(grammar, Forbidden(RuleNode(substr, [RuleNode(space), VarNode(:A), VarNode(:B)]))) 
+    addconstraint!(grammar, Forbidden(RuleNode(substr, [RuleNode(empty), VarNode(:A), VarNode(:B)]))) 
+
+    addconstraint!(grammar, Forbidden(RuleNode(prefixof, [VarNode(:A), RuleNode(space)]))) 
+    addconstraint!(grammar, Forbidden(RuleNode(prefixof, [VarNode(:A), RuleNode(empty)]))) 
+
+    addconstraint!(grammar, Forbidden(RuleNode(suffixof, [VarNode(:A), RuleNode(space)]))) 
+    addconstraint!(grammar, Forbidden(RuleNode(suffixof, [VarNode(:A), RuleNode(empty)]))) 
+
+    addconstraint!(grammar, Forbidden(RuleNode(contains, [RuleNode(space), VarNode(:A)]))) 
+    addconstraint!(grammar, Forbidden(RuleNode(contains, [RuleNode(empty), VarNode(:A)]))) 
+
+    addconstraint!(grammar, Forbidden(RuleNode(indexof, [RuleNode(space), VarNode(:A), VarNode(:B)]))) 
+    addconstraint!(grammar, Forbidden(RuleNode(indexof, [RuleNode(empty), VarNode(:A), VarNode(:B)]))) 
+
+    addconstraint!(grammar, Ordered(RuleNode(equals, [VarNode(:a), VarNode(:b)]), [:a, :b]))
+end
+
+function add_constraints_get_last_name_from_name!(grammar)
+    arg1 = 2
+    empty = 3
+    space = 4
+    concat = 5
+    replace = 6
+    at = 7
+    intstr = 8
+    ifstr = 9
+    substr = 10
+    one = 11
+    zero = 12
+    mone = 13
+    plus = 14
+    minus = 15
+    len = 16
+    strint = 17
+    ifnum = 18
+    indexof = 19
+    tru = 20
+    fls = 21
+    equals = 22
+    prefixof = 23
+    suffixof = 24
+    contains = 25
+
+    addconstraint!(grammar, Forbidden(RuleNode(concat, [VarNode(:A), RuleNode(empty)]))) # A + ""
+    addconstraint!(grammar, Forbidden(RuleNode(concat, [RuleNode(empty), VarNode(:A)]))) # "" + A
+
+    addconstraint!(grammar, Forbidden(RuleNode(replace, [VarNode(:A), VarNode(:B), VarNode(:B)]))) # A.replace(B, B)
+    
+    addconstraint!(grammar, Forbidden(RuleNode(strint, [RuleNode(intstr, [VarNode(:A)])]))) # str(int(A))
+    addconstraint!(grammar, Forbidden(RuleNode(intstr, [RuleNode(strint, [VarNode(:A)])]))) # int(str(A))
+
+    addconstraint!(grammar, Forbidden(RuleNode(ifstr, [VarNode(:A), VarNode(:B), VarNode(:B)]))) # if A then B else B
+    addconstraint!(grammar, Forbidden(RuleNode(ifnum, [VarNode(:A), VarNode(:B), VarNode(:B)]))) # if A then B else B
+
+    addconstraint!(grammar, Forbidden(RuleNode(plus, [VarNode(:A), zero]))) # A + 0
+    addconstraint!(grammar, Forbidden(RuleNode(plus, [zero, VarNode(:A)]))) # 0 + A
+    addconstraint!(grammar, Forbidden(RuleNode(minus, [VarNode(:A), zero]))) # A - 0
+
+    addconstraint!(grammar, Forbidden(RuleNode(equals, [VarNode(:A), VarNode(:A)]))) # A == A
+
+    addconstraint!(grammar, Forbidden(RuleNode(prefixof, [VarNode(:A), VarNode(:A)]))) # A.prefixof(A)
+    addconstraint!(grammar, Forbidden(RuleNode(prefixof, [RuleNode(empty), VarNode(:A)]))) # "".prefixof(A)
+
+    addconstraint!(grammar, Forbidden(RuleNode(suffixof, [VarNode(:A), VarNode(:A)]))) # A.suffixof(A)
+    addconstraint!(grammar, Forbidden(RuleNode(suffixof, [RuleNode(empty), VarNode(:A)]))) # "".suffixof(A)
+
+    addconstraint!(grammar, Forbidden(RuleNode(contains, [VarNode(:A), VarNode(:A)]))) # A.contains(A)
+    addconstraint!(grammar, Forbidden(RuleNode(contains, [VarNode(:A), RuleNode(empty)]))) # A.contains("")
+
+    addconstraint!(grammar, Unique(contains))
+    addconstraint!(grammar, Unique(suffixof))
+    addconstraint!(grammar, Unique(prefixof))
+
+    addconstraint!(grammar, Forbidden(RuleNode(len, [RuleNode(intstr, [VarNode(:A)])]))) # len(str(A::Int))
+
+    num_is_num = falses(25)      
+    num_is_num[11:13] .= true     
+
+    addconstraint!(grammar, Forbidden(RuleNode(equals, [DomainRuleNode(num_is_num),DomainRuleNode(num_is_num)])))
+
+    addconstraint!(grammar, Forbidden(RuleNode(ifstr, [RuleNode(tru), VarNode(:A), VarNode(:B)]))) # if true then A else B
+    addconstraint!(grammar, Forbidden(RuleNode(ifstr, [RuleNode(fls), VarNode(:A), VarNode(:B)]))) # if false then A else B
+    addconstraint!(grammar, Forbidden(RuleNode(ifnum, [RuleNode(tru), VarNode(:A), VarNode(:B)]))) # if true then A else B
+    addconstraint!(grammar, Forbidden(RuleNode(ifnum, [RuleNode(fls), VarNode(:A), VarNode(:B)]))) # if false then A else B
+    
+    
+    addconstraint!(grammar, Forbidden(RuleNode(len, [RuleNode(space)]))) 
+    addconstraint!(grammar, Forbidden(RuleNode(len, [RuleNode(empty)]))) 
+
+    addconstraint!(grammar, Forbidden(RuleNode(replace, [RuleNode(space), VarNode(:A), VarNode(:B)]))) 
+    addconstraint!(grammar, Forbidden(RuleNode(replace, [RuleNode(empty), VarNode(:A), VarNode(:B)]))) 
+    
+    addconstraint!(grammar, Forbidden(RuleNode(substr, [RuleNode(space), VarNode(:A), VarNode(:B)]))) 
+    addconstraint!(grammar, Forbidden(RuleNode(substr, [RuleNode(empty), VarNode(:A), VarNode(:B)]))) 
+
+    addconstraint!(grammar, Forbidden(RuleNode(prefixof, [VarNode(:A), RuleNode(space)]))) 
+    addconstraint!(grammar, Forbidden(RuleNode(prefixof, [VarNode(:A), RuleNode(empty)]))) 
+
+    addconstraint!(grammar, Forbidden(RuleNode(suffixof, [VarNode(:A), RuleNode(space)]))) 
+    addconstraint!(grammar, Forbidden(RuleNode(suffixof, [VarNode(:A), RuleNode(empty)]))) 
+
+    addconstraint!(grammar, Forbidden(RuleNode(contains, [RuleNode(space), VarNode(:A)]))) 
+    addconstraint!(grammar, Forbidden(RuleNode(contains, [RuleNode(empty), VarNode(:A)]))) 
+
+    addconstraint!(grammar, Forbidden(RuleNode(indexof, [RuleNode(space), VarNode(:A), VarNode(:B)]))) 
+    addconstraint!(grammar, Forbidden(RuleNode(indexof, [RuleNode(empty), VarNode(:A), VarNode(:B)]))) 
+
+    addconstraint!(grammar, Ordered(RuleNode(equals, [VarNode(:a), VarNode(:b)]), [:a, :b]))
+end
+
+function add_constraints_count_total_characters_in_a_cell!(grammar)
+    arg1 = 2
+    empty = 3
+    space = 4
+    concat = 5
+    replace = 6
+    at = 7
+    intstr = 8
+    ifstr = 9
+    substr = 10
     one = 11
     zero = 12
     mone = 13
