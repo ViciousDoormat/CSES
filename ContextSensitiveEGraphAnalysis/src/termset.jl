@@ -74,7 +74,7 @@ function generate_small_terms(grammar, up_to_size, grammar_root, examples)
     symboltable :: SymbolTable = SymbolTable(grammar, Main)
 
     for type in unique(grammar.types)
-        for candidate_program ∈ BFSIterator(grammar, type, max_size=up_to_size)
+        for candidate_program ∈ BFSIterator(grammar, type, max_size=(up_to_size+3))
             expr = rulenode2expr(candidate_program, grammar) 
 
             try
@@ -85,10 +85,11 @@ function generate_small_terms(grammar, up_to_size, grammar_root, examples)
             catch
             end
 
-            
             #count_operators(expr) <= up_to_size  || break TODO it iterates incorectly for this; in order of size; size(--x) == size(x+1)
         end
     end
+
+    filter!(term -> count_operators(term) <= up_to_size, small_terms)
 
     return small_terms
 end
