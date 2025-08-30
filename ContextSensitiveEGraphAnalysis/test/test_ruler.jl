@@ -115,7 +115,11 @@ Ruler.variable_cvec = (_) -> [true]
 Ruler.interpret_function = eval
 Ruler.cvec_to_classes = Dict()
 E::Dict{Int,Vector{Union{Bool,Expr,Symbol}}} = Dict([(0, [:(x), :(false)]),(1, [:(x ⊻ x), :(x && false)])])
+
 println(Ruler.ruler([0,1], E, [:x], Bool))
+
+function ruler(counts::Vector{Int}, D::Dict{Int, Vector{AllTypes}}, variables::Vector{Symbol}, ::Type{CVec}, R::Vector{RewriteRule} = Vector{RewriteRule}()) where {AllTypes, CVec}
+
 
 # #TODO test remaining pipeline parts
 

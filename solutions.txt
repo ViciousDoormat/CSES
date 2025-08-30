@@ -1,0 +1,830 @@
+EGraph{Expr, ContextSensitiveEGraphAnalysis.CountData} with 38 e-classes:
+  1 => [true, concat_cvc(%1, %5), concat_cvc(%5, %1), str_to_int_cvc(%14), int_to_str_cvc(%22), %1 + %30, %30 + %1, %1 - %30, substr_cvc(%1, %1, %43), indexof_cvc(%2, %2, %1), indexof_cvc(%2, %2, %60), indexof_cvc(%2, %2, %30), if %1
+    %1
+else
+    %1
+end, %30 - %60, if %30
+    %60
+else
+    %1
+end, if %30
+    %30
+else
+    %1
+end, if %1
+    %1
+else
+    %30
+end, if %30
+    %1
+else
+    %1
+end, if %1
+    %1
+else
+    %60
+end, prefixof_cvc(%2, %2)]
+  2 => [_arg_1, concat_cvc(%2, %5), concat_cvc(%5, %2), str_to_int_cvc(%16), int_to_str_cvc(%24), %2 + %30, %30 + %2, %2 - %30, substr_cvc(%2, %1, %45), _arg_2, apple, if %1
+    %2
+else
+    %2
+end, if %30
+    %2
+else
+    %2
+end, if %1
+    %2
+else
+    %54
+end, replace_cvc(%2, %54, %2), if %30
+    %54
+else
+    %2
+end, if %30
+    %5
+else
+    %2
+end, if %1
+    %2
+else
+    %5
+end, replace_cvc(%2, %54, %5)]
+  5 => [, concat_cvc(%5, %5), str_to_int_cvc(%97), int_to_str_cvc(%117), %5 + %30, %30 + %5, %5 - %30, substr_cvc(%5, %1, %175), substr_cvc(%2, %30, %60), substr_cvc(%2, %1, %60), replace_cvc(%2, %2, %5), if %1
+    %5
+else
+    %2
+end, if %30
+    %2
+else
+    %5
+end, if %30
+    %54
+else
+    %5
+end, if %30
+    %5
+else
+    %5
+end, if %1
+    %5
+else
+    %5
+end, if %1
+    %5
+else
+    %54
+end]
+  14 => [int_to_str_cvc(%1), concat_cvc(%14, %5), concat_cvc(%5, %14), str_to_int_cvc(%99), %14 + %30, %30 + %14, %14 - %30, substr_cvc(%14, %1, %179)]
+  16 => [int_to_str_cvc(%2), concat_cvc(%16, %5), concat_cvc(%5, %16), str_to_int_cvc(%101), %16 + %30, %30 + %16, %16 - %30, substr_cvc(%16, %1, %181)]
+  22 => [str_to_int_cvc(%1), concat_cvc(%22, %5), concat_cvc(%5, %22), int_to_str_cvc(%119), %22 + %30, %30 + %22, %22 - %30, substr_cvc(%22, %1, %185)]
+  24 => [str_to_int_cvc(%2), concat_cvc(%24, %5), concat_cvc(%5, %24), int_to_str_cvc(%121), %24 + %30, %30 + %24, %24 - %30, substr_cvc(%24, %1, %187)]
+  30 => [false, concat_cvc(%30, %5), concat_cvc(%5, %30), str_to_int_cvc(%105), int_to_str_cvc(%125), %30 + %30, %30 - %30, substr_cvc(%30, %1, %191), prefixof_cvc(%54, %2), contains_cvc(%2, %54), suffixof_cvc(%54, %2), if %1
+    %30
+else
+    %1
+end, %60 == %30, if %30
+    %1
+else
+    %30
+end, if %30
+    %60
+else
+    %30
+end, if %1
+    %30
+else
+    %60
+end, %60 + %1, %1 - %1, %1 == %30, %60 == %1, if %1
+    %30
+else
+    %30
+end, %30 == %60, %60 - %60, %30 == %1, if %30
+    %30
+else
+    %30
+end, %1 + %60, %1 == %60]
+  43 => [len_cvc(%1), concat_cvc(%43, %5), concat_cvc(%5, %43), str_to_int_cvc(%107), int_to_str_cvc(%127), %43 + %30, %30 + %43, %43 - %30, substr_cvc(%43, %1, %193)]
+  45 => [len_cvc(%2), concat_cvc(%45, %5), concat_cvc(%5, %45), str_to_int_cvc(%109), int_to_str_cvc(%129), %45 + %30, %30 + %45, %45 - %30, %45 + %175, %175 + %45, substr_cvc(%45, %1, %195)]
+  54 => [ , concat_cvc(%54, %5), concat_cvc(%5, %54), str_to_int_cvc(%113), int_to_str_cvc(%133), %54 + %30, %30 + %54, %54 - %30, substr_cvc(%54, %1, %199), replace_cvc(%2, %2, %54), if %30
+    %2
+else
+    %54
+end, if %1
+    %54
+else
+    %2
+end, if %30
+    %54
+else
+    %54
+end, if %30
+    %5
+else
+    %54
+end, if %1
+    %54
+else
+    %54
+end, if %1
+    %54
+else
+    %5
+end, at_cvc(%54, %1)]
+  60 => [-1, concat_cvc(%60, %5), concat_cvc(%5, %60), str_to_int_cvc(%115), int_to_str_cvc(%135), %60 + %30, %30 + %60, %60 - %30, substr_cvc(%60, %1, %201), indexof_cvc(%2, %54, %60), indexof_cvc(%2, %54, %1), indexof_cvc(%2, %54, %30), if %1
+    %60
+else
+    %1
+end, if %30
+    %60
+else
+    %60
+end, if %1
+    %60
+else
+    %60
+end, %30 - %1, if %30
+    %1
+else
+    %60
+end, if %1
+    %60
+else
+    %30
+end, if %30
+    %30
+else
+    %60
+end]
+  97 => [int_to_str_cvc(%5)]
+  99 => [int_to_str_cvc(%14)]
+  101 => [int_to_str_cvc(%16)]
+  105 => [int_to_str_cvc(%30)]
+  107 => [int_to_str_cvc(%43)]
+  109 => [int_to_str_cvc(%45)]
+  113 => [int_to_str_cvc(%54)]
+  115 => [int_to_str_cvc(%60)]
+  117 => [str_to_int_cvc(%5)]
+  119 => [str_to_int_cvc(%22)]
+  121 => [str_to_int_cvc(%24)]
+  125 => [str_to_int_cvc(%30)]
+  127 => [str_to_int_cvc(%43)]
+  129 => [str_to_int_cvc(%45)]
+  133 => [str_to_int_cvc(%54)]
+  135 => [str_to_int_cvc(%60)]
+  175 => [len_cvc(%5)]
+  179 => [len_cvc(%14)]
+  181 => [len_cvc(%16)]
+  185 => [len_cvc(%22)]
+  187 => [len_cvc(%24)]
+  191 => [len_cvc(%30)]
+  193 => [len_cvc(%43)]
+  195 => [len_cvc(%45)]
+  199 => [len_cvc(%54)]
+  201 => [len_cvc(%60)]
+EGraph{Expr, ContextSensitiveEGraphAnalysis.CountData} with 45 e-classes:
+  1 => [false, concat_cvc(%1, %5), concat_cvc(%5, %1), str_to_int_cvc(%14), int_to_str_cvc(%22), %1 + %1, %1 - %1, substr_cvc(%1, %41, %42), contains_cvc(%3, %2), contains_cvc(%2, %3), suffixof_cvc(%2, %3), prefixof_cvc(%3, %2), suffixof_cvc(%3, %2), prefixof_cvc(%2, %3), prefixof_cvc(%53, %2), if %1
+    %1
+else
+    %1
+end, %1 == %41, %41 == %91, %91 == %1, if %41
+    %1
+else
+    %41
+end, if %41
+    %1
+else
+    %91
+end, %41 + %91, if %1
+    %91
+else
+    %1
+end, %91 + %41, %1 == %91, %91 - %91, if %1
+    %41
+else
+    %1
+end, if %41
+    %1
+else
+    %1
+end, %91 == %41, %41 - %41, %41 == %1, suffixof_cvc(%53, %3), contains_cvc(%3, %53)]
+  2 => [_arg_1, concat_cvc(%2, %5), concat_cvc(%5, %2), str_to_int_cvc(%16), int_to_str_cvc(%24), %2 + %1, %1 + %2, %2 - %1, substr_cvc(%2, %41, %44), orange, if %1
+    %3
+else
+    %2
+end, replace_cvc(%2, %3, %53), replace_cvc(%2, %53, %3), replace_cvc(%2, %3, %5), if %41
+    %2
+else
+    %3
+end, replace_cvc(%3, %3, %2), replace_cvc(%2, %3, %2), if %1
+    %2
+else
+    %2
+end, if %41
+    %2
+else
+    %2
+end, if %41
+    %2
+else
+    %5
+end, if %41
+    %2
+else
+    %53
+end, if %1
+    %5
+else
+    %2
+end, if %1
+    %53
+else
+    %2
+end, replace_cvc(%2, %53, %2), replace_cvc(%2, %53, %5)]
+  3 => [_arg_2, concat_cvc(%3, %5), concat_cvc(%5, %3), str_to_int_cvc(%18), int_to_str_cvc(%26), %3 + %1, %1 + %3, %3 - %1, substr_cvc(%3, %41, %44), Orange, replace_cvc(%3, %2, %3), if %41
+    %3
+else
+    %2
+end, replace_cvc(%2, %2, %3), if %1
+    %2
+else
+    %3
+end, replace_cvc(%3, %53, %2), replace_cvc(%3, %2, %53), replace_cvc(%3, %2, %5), replace_cvc(%3, %53, %5), if %1
+    %53
+else
+    %3
+end, if %1
+    %3
+else
+    %3
+end, if %41
+    %3
+else
+    %5
+end, if %41
+    %3
+else
+    %3
+end, if %41
+    %3
+else
+    %53
+end, if %1
+    %5
+else
+    %3
+end, replace_cvc(%3, %53, %3)]
+  5 => [, concat_cvc(%5, %5), str_to_int_cvc(%131), int_to_str_cvc(%151), %5 + %1, %1 + %5, %5 - %1, substr_cvc(%5, %41, %210), substr_cvc(%2, %41, %91), if %1
+    %53
+else
+    %5
+end, if %41
+    %5
+else
+    %5
+end, if %41
+    %5
+else
+    %53
+end, if %1
+    %5
+else
+    %5
+end]
+  14 => [int_to_str_cvc(%1), concat_cvc(%14, %5), concat_cvc(%5, %14), str_to_int_cvc(%133), %14 + %1, %1 + %14, %14 - %1, substr_cvc(%14, %41, %216)]
+  16 => [int_to_str_cvc(%2), concat_cvc(%16, %5), concat_cvc(%5, %16), str_to_int_cvc(%135), %16 + %1, %1 + %16, %16 - %1, substr_cvc(%16, %41, %218)]
+  18 => [int_to_str_cvc(%3), concat_cvc(%18, %5), concat_cvc(%5, %18), str_to_int_cvc(%137), %18 + %1, %1 + %18, %18 - %1, substr_cvc(%18, %41, %220)]
+  22 => [str_to_int_cvc(%1), concat_cvc(%22, %5), concat_cvc(%5, %22), int_to_str_cvc(%153), %22 + %1, %1 + %22, %22 - %1, substr_cvc(%22, %41, %222)]
+  24 => [str_to_int_cvc(%2), concat_cvc(%24, %5), concat_cvc(%5, %24), int_to_str_cvc(%155), %24 + %1, %1 + %24, %24 - %1, substr_cvc(%24, %41, %224)]
+  26 => [str_to_int_cvc(%3), concat_cvc(%26, %5), concat_cvc(%5, %26), int_to_str_cvc(%157), %26 + %1, %1 + %26, %26 - %1, substr_cvc(%26, %41, %226)]
+  41 => [true, concat_cvc(%41, %5), concat_cvc(%5, %41), str_to_int_cvc(%141), int_to_str_cvc(%161), %41 + %1, %1 + %41, %41 - %1, substr_cvc(%41, %41, %230), indexof_cvc(%2, %2, %91), %1 - %91, if %1
+    %1
+else
+    %41
+end, if %41
+    %41
+else
+    %41
+end, if %1
+    %91
+else
+    %41
+end, if %41
+    %41
+else
+    %91
+end, if %41
+    %41
+else
+    %1
+end, if %1
+    %41
+else
+    %41
+end]
+  42 => [len_cvc(%1), concat_cvc(%42, %5), concat_cvc(%5, %42), str_to_int_cvc(%143), int_to_str_cvc(%163), %42 + %1, %1 + %42, %42 - %1, substr_cvc(%42, %41, %232)]
+  44 => [len_cvc(%2), concat_cvc(%44, %5), concat_cvc(%5, %44), str_to_int_cvc(%145), int_to_str_cvc(%165), %44 + %1, %1 + %44, %44 - %1, %44 + %210, %210 + %44, substr_cvc(%44, %41, %234), len_cvc(%3)]
+  53 => [ , concat_cvc(%53, %5), concat_cvc(%5, %53), str_to_int_cvc(%149), int_to_str_cvc(%169), %53 + %1, %1 + %53, %53 - %1, substr_cvc(%53, %41, %238), if %1
+    %3
+else
+    %53
+end, at_cvc(%53, %41), if %1
+    %5
+else
+    %53
+end, if %41
+    %53
+else
+    %53
+end, if %1
+    %53
+else
+    %53
+end, if %41
+    %53
+else
+    %5
+end]
+  91 => [-1, concat_cvc(%91, %5), concat_cvc(%5, %91), str_to_int_cvc(%139), int_to_str_cvc(%159), %91 + %1, %1 + %91, %91 - %1, substr_cvc(%91, %41, %228), indexof_cvc(%3, %2, %91), indexof_cvc(%2, %3, %91), indexof_cvc(%3, %2, %41), indexof_cvc(%2, %3, %41), indexof_cvc(%3, %2, %1), indexof_cvc(%2, %3, %1), indexof_cvc(%2, %53, %1), indexof_cvc(%3, %53, %1), indexof_cvc(%2, %53, %41), indexof_cvc(%2, %53, %91), indexof_cvc(%3, %53, %91), indexof_cvc(%3, %53, %41), if %1
+    %41
+else
+    %91
+end, %1 - %41, if %41
+    %91
+else
+    %91
+end, if %41
+    %91
+else
+    %41
+end, if %1
+    %91
+else
+    %91
+end, if %41
+    %91
+else
+    %1
+end, if %1
+    %1
+else
+    %91
+end]
+  131 => [int_to_str_cvc(%5)]
+  133 => [int_to_str_cvc(%14)]
+  135 => [int_to_str_cvc(%16)]
+  137 => [int_to_str_cvc(%18)]
+  139 => [int_to_str_cvc(%91)]
+  141 => [int_to_str_cvc(%41)]
+  143 => [int_to_str_cvc(%42)]
+  145 => [int_to_str_cvc(%44)]
+  149 => [int_to_str_cvc(%53)]
+  151 => [str_to_int_cvc(%5)]
+  153 => [str_to_int_cvc(%22)]
+  155 => [str_to_int_cvc(%24)]
+  157 => [str_to_int_cvc(%26)]
+  159 => [str_to_int_cvc(%91)]
+  161 => [str_to_int_cvc(%41)]
+  163 => [str_to_int_cvc(%42)]
+  165 => [str_to_int_cvc(%44)]
+  169 => [str_to_int_cvc(%53)]
+  210 => [len_cvc(%5)]
+  216 => [len_cvc(%14)]
+  218 => [len_cvc(%16)]
+  220 => [len_cvc(%18)]
+  222 => [len_cvc(%22)]
+  224 => [len_cvc(%24)]
+  226 => [len_cvc(%26)]
+  228 => [len_cvc(%91)]
+  230 => [len_cvc(%41)]
+  232 => [len_cvc(%42)]
+  234 => [len_cvc(%44)]
+  238 => [len_cvc(%53)]
+EGraph{Expr, ContextSensitiveEGraphAnalysis.CountData} with 38 e-classes:
+  1 => [true, concat_cvc(%1, %5), concat_cvc(%5, %1), str_to_int_cvc(%14), int_to_str_cvc(%22), %1 + %30, %30 + %1, %1 - %30, substr_cvc(%1, %1, %43), indexof_cvc(%2, %2, %1), indexof_cvc(%2, %2, %62), indexof_cvc(%2, %2, %30), if %1
+    %1
+else
+    %1
+end, %30 - %62, if %30
+    %62
+else
+    %1
+end, if %30
+    %30
+else
+    %1
+end, if %1
+    %1
+else
+    %30
+end, if %30
+    %1
+else
+    %1
+end, if %1
+    %1
+else
+    %62
+end, prefixof_cvc(%2, %2)]
+  2 => [_arg_1, concat_cvc(%2, %5), concat_cvc(%5, %2), str_to_int_cvc(%16), int_to_str_cvc(%24), %2 + %30, %30 + %2, %2 - %30, substr_cvc(%2, %1, %45), _arg_2, peach, replace_cvc(%2, %52, %2), if %1
+    %2
+else
+    %52
+end, if %30
+    %2
+else
+    %2
+end, if %1
+    %2
+else
+    %2
+end, if %30
+    %52
+else
+    %2
+end, if %30
+    %5
+else
+    %2
+end, if %1
+    %2
+else
+    %5
+end, replace_cvc(%2, %52, %5)]
+  5 => [, concat_cvc(%5, %5), str_to_int_cvc(%97), int_to_str_cvc(%117), %5 + %30, %30 + %5, %5 - %30, substr_cvc(%5, %1, %175), if %1
+    %5
+else
+    %2
+end, replace_cvc(%2, %2, %5), substr_cvc(%2, %1, %62), substr_cvc(%2, %30, %62), if %30
+    %2
+else
+    %5
+end, if %30
+    %52
+else
+    %5
+end, if %30
+    %5
+else
+    %5
+end, if %1
+    %5
+else
+    %5
+end, if %1
+    %5
+else
+    %52
+end]
+  14 => [int_to_str_cvc(%1), concat_cvc(%14, %5), concat_cvc(%5, %14), str_to_int_cvc(%99), %14 + %30, %30 + %14, %14 - %30, substr_cvc(%14, %1, %179)]
+  16 => [int_to_str_cvc(%2), concat_cvc(%16, %5), concat_cvc(%5, %16), str_to_int_cvc(%101), %16 + %30, %30 + %16, %16 - %30, substr_cvc(%16, %1, %181)]
+  22 => [str_to_int_cvc(%1), concat_cvc(%22, %5), concat_cvc(%5, %22), int_to_str_cvc(%119), %22 + %30, %30 + %22, %22 - %30, substr_cvc(%22, %1, %185)]
+  24 => [str_to_int_cvc(%2), concat_cvc(%24, %5), concat_cvc(%5, %24), int_to_str_cvc(%121), %24 + %30, %30 + %24, %24 - %30, substr_cvc(%24, %1, %187)]
+  30 => [false, concat_cvc(%30, %5), concat_cvc(%5, %30), str_to_int_cvc(%105), int_to_str_cvc(%125), %30 + %30, %30 - %30, substr_cvc(%30, %1, %191), prefixof_cvc(%52, %2), contains_cvc(%2, %52), suffixof_cvc(%52, %2), %62 == %30, if %30
+    %1
+else
+    %30
+end, if %30
+    %62
+else
+    %30
+end, if %1
+    %30
+else
+    %62
+end, if %1
+    %30
+else
+    %1
+end, %30 == %62, %62 + %1, if %1
+    %30
+else
+    %30
+end, %1 - %1, %1 == %30, %62 == %1, if %30
+    %30
+else
+    %30
+end, %1 + %62, %1 == %62, %30 == %1, %62 - %62]
+  43 => [len_cvc(%1), concat_cvc(%43, %5), concat_cvc(%5, %43), str_to_int_cvc(%107), int_to_str_cvc(%127), %43 + %30, %30 + %43, %43 - %30, substr_cvc(%43, %1, %193)]
+  45 => [len_cvc(%2), concat_cvc(%45, %5), concat_cvc(%5, %45), str_to_int_cvc(%109), int_to_str_cvc(%129), %45 + %30, %30 + %45, %45 - %30, %45 + %175, %175 + %45, substr_cvc(%45, %1, %195)]
+  52 => [ , concat_cvc(%52, %5), concat_cvc(%5, %52), str_to_int_cvc(%113), int_to_str_cvc(%133), %52 + %30, %30 + %52, %52 - %30, substr_cvc(%52, %1, %199), replace_cvc(%2, %2, %52), if %30
+    %2
+else
+    %52
+end, if %1
+    %52
+else
+    %2
+end, if %1
+    %52
+else
+    %5
+end, if %1
+    %52
+else
+    %52
+end, if %30
+    %52
+else
+    %52
+end, at_cvc(%52, %1), if %30
+    %5
+else
+    %52
+end]
+  62 => [-1, concat_cvc(%62, %5), concat_cvc(%5, %62), str_to_int_cvc(%115), int_to_str_cvc(%135), %62 + %30, %30 + %62, %62 - %30, substr_cvc(%62, %1, %201), indexof_cvc(%2, %52, %62), indexof_cvc(%2, %52, %1), indexof_cvc(%2, %52, %30), if %30
+    %30
+else
+    %62
+end, if %1
+    %62
+else
+    %30
+end, if %30
+    %1
+else
+    %62
+end, if %1
+    %62
+else
+    %1
+end, if %30
+    %62
+else
+    %62
+end, %30 - %1, if %1
+    %62
+else
+    %62
+end]
+  97 => [int_to_str_cvc(%5)]
+  99 => [int_to_str_cvc(%14)]
+  101 => [int_to_str_cvc(%16)]
+  105 => [int_to_str_cvc(%30)]
+  107 => [int_to_str_cvc(%43)]
+  109 => [int_to_str_cvc(%45)]
+  113 => [int_to_str_cvc(%52)]
+  115 => [int_to_str_cvc(%62)]
+  117 => [str_to_int_cvc(%5)]
+  119 => [str_to_int_cvc(%22)]
+  121 => [str_to_int_cvc(%24)]
+  125 => [str_to_int_cvc(%30)]
+  127 => [str_to_int_cvc(%43)]
+  129 => [str_to_int_cvc(%45)]
+  133 => [str_to_int_cvc(%52)]
+  135 => [str_to_int_cvc(%62)]
+  175 => [len_cvc(%5)]
+  179 => [len_cvc(%14)]
+  181 => [len_cvc(%16)]
+  185 => [len_cvc(%22)]
+  187 => [len_cvc(%24)]
+  191 => [len_cvc(%30)]
+  193 => [len_cvc(%43)]
+  195 => [len_cvc(%45)]
+  199 => [len_cvc(%52)]
+  201 => [len_cvc(%62)]
+EGraph{Expr, ContextSensitiveEGraphAnalysis.CountData} with 45 e-classes:
+  1 => [false, concat_cvc(%1, %5), concat_cvc(%5, %1), str_to_int_cvc(%14), int_to_str_cvc(%22), %1 + %1, %1 - %1, substr_cvc(%1, %41, %42), prefixof_cvc(%52, %2), suffixof_cvc(%52, %2), suffixof_cvc(%3, %2), prefixof_cvc(%3, %2), suffixof_cvc(%2, %3), contains_cvc(%2, %3), contains_cvc(%2, %52), contains_cvc(%3, %2), prefixof_cvc(%2, %3), %41 == %76, %1 == %41, if %1
+    %76
+else
+    %1
+end, contains_cvc(%3, %52), %76 + %41, if %41
+    %1
+else
+    %1
+end, suffixof_cvc(%52, %3), %41 == %1, %41 - %41, %41 + %76, if %41
+    %1
+else
+    %76
+end, if %41
+    %1
+else
+    %41
+end, %76 == %1, %76 == %41, prefixof_cvc(%52, %3), %76 - %76, %1 == %76, if %1
+    %41
+else
+    %1
+end, if %1
+    %1
+else
+    %1
+end]
+  2 => [_arg_1, concat_cvc(%2, %5), concat_cvc(%5, %2), str_to_int_cvc(%16), int_to_str_cvc(%24), %2 + %1, %1 + %2, %2 - %1, substr_cvc(%2, %41, %44), cherry, replace_cvc(%2, %3, %2), if %41
+    %2
+else
+    %52
+end, if %1
+    %5
+else
+    %2
+end, replace_cvc(%3, %3, %2), if %1
+    %52
+else
+    %2
+end, if %41
+    %2
+else
+    %3
+end, if %41
+    %2
+else
+    %5
+end, replace_cvc(%2, %52, %2), if %41
+    %2
+else
+    %2
+end, if %1
+    %2
+else
+    %2
+end, replace_cvc(%2, %3, %5), replace_cvc(%2, %52, %3), replace_cvc(%2, %52, %5), replace_cvc(%2, %3, %52), if %1
+    %3
+else
+    %2
+end]
+  3 => [_arg_2, concat_cvc(%3, %5), concat_cvc(%5, %3), str_to_int_cvc(%18), int_to_str_cvc(%26), %3 + %1, %1 + %3, %3 - %1, substr_cvc(%3, %41, %44), cherrY, if %41
+    %3
+else
+    %2
+end, replace_cvc(%2, %2, %3), if %1
+    %2
+else
+    %3
+end, replace_cvc(%3, %52, %2), replace_cvc(%3, %2, %52), replace_cvc(%3, %2, %5), replace_cvc(%3, %2, %3), replace_cvc(%3, %52, %5), replace_cvc(%3, %52, %3), if %1
+    %5
+else
+    %3
+end, if %41
+    %3
+else
+    %52
+end, if %41
+    %3
+else
+    %3
+end, if %1
+    %52
+else
+    %3
+end, if %1
+    %3
+else
+    %3
+end, if %41
+    %3
+else
+    %5
+end]
+  5 => [, concat_cvc(%5, %5), str_to_int_cvc(%121), int_to_str_cvc(%141), %5 + %1, %1 + %5, %5 - %1, substr_cvc(%5, %41, %200), if %1
+    %2
+else
+    %5
+end, substr_cvc(%2, %1, %76), substr_cvc(%2, %41, %76), if %41
+    %5
+else
+    %2
+end, replace_cvc(%2, %2, %5), if %1
+    %3
+else
+    %5
+end, substr_cvc(%3, %1, %76), if %1
+    %5
+else
+    %5
+end, if %41
+    %5
+else
+    %52
+end, if %41
+    %5
+else
+    %5
+end, replace_cvc(%3, %3, %5), substr_cvc(%3, %41, %76), if %41
+    %5
+else
+    %3
+end, if %1
+    %52
+else
+    %5
+end]
+  14 => [int_to_str_cvc(%1), concat_cvc(%14, %5), concat_cvc(%5, %14), str_to_int_cvc(%125), %14 + %1, %1 + %14, %14 - %1, substr_cvc(%14, %41, %208)]
+  16 => [int_to_str_cvc(%2), concat_cvc(%16, %5), concat_cvc(%5, %16), str_to_int_cvc(%127), %16 + %1, %1 + %16, %16 - %1, substr_cvc(%16, %41, %210)]
+  18 => [int_to_str_cvc(%3), concat_cvc(%18, %5), concat_cvc(%5, %18), str_to_int_cvc(%129), %18 + %1, %1 + %18, %18 - %1, substr_cvc(%18, %41, %212)]
+  22 => [str_to_int_cvc(%1), concat_cvc(%22, %5), concat_cvc(%5, %22), int_to_str_cvc(%145), %22 + %1, %1 + %22, %22 - %1, substr_cvc(%22, %41, %214)]
+  24 => [str_to_int_cvc(%2), concat_cvc(%24, %5), concat_cvc(%5, %24), int_to_str_cvc(%147), %24 + %1, %1 + %24, %24 - %1, substr_cvc(%24, %41, %216)]
+  26 => [str_to_int_cvc(%3), concat_cvc(%26, %5), concat_cvc(%5, %26), int_to_str_cvc(%149), %26 + %1, %1 + %26, %26 - %1, substr_cvc(%26, %41, %218)]
+  41 => [true, concat_cvc(%41, %5), concat_cvc(%5, %41), str_to_int_cvc(%131), int_to_str_cvc(%151), %41 + %1, %1 + %41, %41 - %1, substr_cvc(%41, %41, %220), indexof_cvc(%2, %2, %1), indexof_cvc(%2, %2, %41), indexof_cvc(%2, %2, %76), if %1
+    %41
+else
+    %41
+end, indexof_cvc(%3, %3, %41), %1 - %76, if %1
+    %1
+else
+    %41
+end, indexof_cvc(%3, %3, %76), if %1
+    %76
+else
+    %41
+end, if %41
+    %41
+else
+    %76
+end, indexof_cvc(%3, %3, %1), if %41
+    %41
+else
+    %1
+end, if %41
+    %41
+else
+    %41
+end]
+  42 => [len_cvc(%1), concat_cvc(%42, %5), concat_cvc(%5, %42), str_to_int_cvc(%133), int_to_str_cvc(%153), %42 + %1, %1 + %42, %42 - %1, substr_cvc(%42, %41, %222)]
+  44 => [len_cvc(%2), concat_cvc(%44, %5), concat_cvc(%5, %44), str_to_int_cvc(%135), int_to_str_cvc(%155), %44 + %1, %1 + %44, %44 - %1, %44 + %200, %200 + %44, substr_cvc(%44, %41, %224), len_cvc(%3)]
+  52 => [ , concat_cvc(%52, %5), concat_cvc(%5, %52), str_to_int_cvc(%139), int_to_str_cvc(%159), %52 + %1, %1 + %52, %52 - %1, substr_cvc(%52, %41, %228), replace_cvc(%2, %2, %52), if %41
+    %52
+else
+    %2
+end, if %1
+    %2
+else
+    %52
+end, if %41
+    %52
+else
+    %52
+end, if %41
+    %52
+else
+    %3
+end, if %1
+    %5
+else
+    %52
+end, replace_cvc(%3, %3, %52), at_cvc(%52, %41), if %1
+    %52
+else
+    %52
+end, if %1
+    %3
+else
+    %52
+end, if %41
+    %52
+else
+    %5
+end]
+  76 => [-1, concat_cvc(%76, %5), concat_cvc(%5, %76), str_to_int_cvc(%123), int_to_str_cvc(%143), %76 + %1, %1 + %76, %76 - %1, substr_cvc(%76, %41, %206), indexof_cvc(%2, %52, %1), indexof_cvc(%2, %3, %1), indexof_cvc(%3, %2, %1), indexof_cvc(%2, %52, %41), indexof_cvc(%2, %3, %41), indexof_cvc(%3, %2, %41), indexof_cvc(%2, %3, %76), indexof_cvc(%2, %52, %76), indexof_cvc(%3, %2, %76), if %41
+    %76
+else
+    %1
+end, if %1
+    %41
+else
+    %76
+end, if %41
+    %76
+else
+    %41
+end, indexof_cvc(%3, %52, %76), indexof_cvc(%3, %52, %41), if %1
+    %76
+else
+    %76
+end, if %1
+    %1
+else
+    %76
+end, %1 - %41, if %41
+    %76
+else
+    %76
+end, indexof_cvc(%3, %52, %1)]
+  121 => [int_to_str_cvc(%5)]
+  123 => [int_to_str_cvc(%76)]
+  125 => [int_to_str_cvc(%14)]
+  127 => [int_to_str_cvc(%16)]
+  129 => [int_to_str_cvc(%18)]
+  131 => [int_to_str_cvc(%41)]
+  133 => [int_to_str_cvc(%42)]
+  135 => [int_to_str_cvc(%44)]
+  139 => [int_to_str_cvc(%52)]
+  141 => [str_to_int_cvc(%5)]
+  143 => [str_to_int_cvc(%76)]
+  145 => [str_to_int_cvc(%22)]
+  147 => [str_to_int_cvc(%24)]
+  149 => [str_to_int_cvc(%26)]
+  151 => [str_to_int_cvc(%41)]
+  153 => [str_to_int_cvc(%42)]
+  155 => [str_to_int_cvc(%44)]
+  159 => [str_to_int_cvc(%52)]
+  200 => [len_cvc(%5)]
+  206 => [len_cvc(%76)]
+  208 => [len_cvc(%14)]
+  210 => [len_cvc(%16)]
+  212 => [len_cvc(%18)]
+  214 => [len_cvc(%22)]
+  216 => [len_cvc(%24)]
+  218 => [len_cvc(%26)]
+  220 => [len_cvc(%41)]
+  222 => [len_cvc(%42)]
+  224 => [len_cvc(%44)]
+  228 => [len_cvc(%52)]

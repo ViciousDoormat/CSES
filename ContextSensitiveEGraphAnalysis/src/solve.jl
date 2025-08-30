@@ -10,43 +10,282 @@ using HerbCore
 
 using IterTools
 
-function solve(examples, grammar, grammar_root, variables, ::Type{AllTypes}, ::Type{CVec}, num_solutions=1, up_to_size=3, interpret_function=interpret_sygus) where {AllTypes, CVec}
+mutable struct CountData
+    total::Int          # total number of terms
+    seen::UInt64  # eclass IDs that contributed
+    graph::EGraph{Expr,CountData}
+end
+
+
+
+function EGraphs.make(g::EGraph{Expr,CountData}, n::VecExpr)::CountData
+    if !v_isexpr(n)
+        return CountData(1, g.memo[n], g)
+    else
+        return CountData(prod(c -> g[c].data.total, v_children(n)), find(g,g.memo[n]), g)
+    end
+end
+
+function EGraphs.join(a::CountData, b::CountData)::CountData
+    if a.seen == b.seen
+        return a
+    else
+        #find out what used a and what used b
+        #for something that uses a, divide its total by a and multiply by (a+b)
+        #for something that uses b, divide its total by a and multiply by (a+b)
+        return (CountData(a.total + b.total, find(a.graph, a.seen), a.graph))
+    end
+end
+
+function solve(examples, grammar, grammar_root, variables, ::Type{AllTypes}, ::Type{CVec}, constraints, constraints_dumb, io, ioruler, with_solutions, num_solutions=1, up_to_size=3, R::Vector{RewriteRule} = Vector{RewriteRule}(), interpret_function=interpret_sygus) where {AllTypes, CVec}
     println("create termset")
-    ungrouped_termset, solutions_per_example = (Set(Union{UInt64, Expr, Symbol}[:(bvnot_cvc(smol_cvc(shesh_cvc(0x0000000000000000)))), :(bvor_cvc(0x0000000000000001, arba_cvc(0x0000000000000001))), :(arba_cvc(smol_cvc(ehad_cvc(0x0000000000000001)))), :(bvadd_cvc(arba_cvc(0x0000000000000001), _arg_1)), :(bvnot_cvc(0x0000000000000001)), :(bvxor_cvc(ehad_cvc(_arg_1), 0x0000000000000001)), :(shesh_cvc(bvadd_cvc(0x0000000000000000, 0x0000000000000000))), :(arba_cvc(bvnot_cvc(ehad_cvc(_arg_1)))), :(bvadd_cvc(shesh_cvc(0x0000000000000000), _arg_1)), :(bvnot_cvc(shesh_cvc(bvnot_cvc(0x0000000000000001)))), :(arba_cvc(bvor_cvc(0x0000000000000000, _arg_1))), :(bvxor_cvc(0x0000000000000000, smol_cvc(0x0000000000000001))), :(bvnot_cvc(bvnot_cvc(bvnot_cvc(0x0000000000000000)))), :(bvnot_cvc(arba_cvc(ehad_cvc(0x0000000000000000)))), :(bvxor_cvc(0x0000000000000000, 0x0000000000000001)), :(bvand_cvc(shesh_cvc(0x0000000000000000), 0x0000000000000000)), :(shesh_cvc(bvnot_cvc(bvnot_cvc(0x0000000000000001)))), :(shesh_cvc(bvnot_cvc(0x0000000000000001))), :(im_cvc(0x0000000000000000, _arg_1, 0x0000000000000001)), :(ehad_cvc(ehad_cvc(0x0000000000000000))), :(bvnot_cvc(smol_cvc(smol_cvc(0x0000000000000000)))), :(ehad_cvc(bvnot_cvc(ehad_cvc(0x0000000000000000)))), :(ehad_cvc(bvxor_cvc(0x0000000000000001, 0x0000000000000001))), :(shesh_cvc(arba_cvc(shesh_cvc(0x0000000000000001)))), :(bvnot_cvc(ehad_cvc(bvnot_cvc(0x0000000000000000)))), :(smol_cvc(bvnot_cvc(bvnot_cvc(_arg_1)))), :(smol_cvc(bvadd_cvc(0x0000000000000000, _arg_1))), :(ehad_cvc(bvnot_cvc(shesh_cvc(0x0000000000000000)))), :(arba_cvc(ehad_cvc(bvnot_cvc(0x0000000000000001)))), :(bvand_cvc(_arg_1, 0x0000000000000001)), :(bvand_cvc(arba_cvc(0x0000000000000001), 0x0000000000000001)), :(ehad_cvc(bvadd_cvc(0x0000000000000000, 0x0000000000000001))), :(shesh_cvc(bvnot_cvc(shesh_cvc(_arg_1)))), :(bvnot_cvc(bvand_cvc(_arg_1, 0x0000000000000001))), :(smol_cvc(bvxor_cvc(_arg_1, _arg_1))), :(bvxor_cvc(_arg_1, ehad_cvc(0x0000000000000000))), :(bvadd_cvc(0x0000000000000000, shesh_cvc(0x0000000000000000))), :(ehad_cvc(bvor_cvc(_arg_1, 0x0000000000000000))), :(bvxor_cvc(bvnot_cvc(_arg_1), 0x0000000000000000)), :(bvadd_cvc(shesh_cvc(0x0000000000000001), 0x0000000000000001)), :(bvnot_cvc(ehad_cvc(ehad_cvc(0x0000000000000000)))), :(bvadd_cvc(_arg_1, arba_cvc(0x0000000000000000))), :(bvadd_cvc(0x0000000000000000, bvnot_cvc(_arg_1))), :(bvadd_cvc(0x0000000000000001, 0x0000000000000001)), :(arba_cvc(smol_cvc(smol_cvc(_arg_1)))), :(bvnot_cvc(bvxor_cvc(0x0000000000000001, _arg_1))), :(bvand_cvc(0x0000000000000000, smol_cvc(_arg_1))), :(bvnot_cvc(bvor_cvc(0x0000000000000000, 0x0000000000000000))), :(shesh_cvc(shesh_cvc(arba_cvc(0x0000000000000000)))), :(bvadd_cvc(smol_cvc(_arg_1), 0x0000000000000000)), :(bvand_cvc(smol_cvc(_arg_1), 0x0000000000000000)), :(bvnot_cvc(smol_cvc(arba_cvc(0x0000000000000001)))), :(ehad_cvc(ehad_cvc(ehad_cvc(_arg_1)))), :(bvadd_cvc(0x0000000000000000, smol_cvc(0x0000000000000001))), :(bvnot_cvc(smol_cvc(ehad_cvc(_arg_1)))), :(ehad_cvc(smol_cvc(smol_cvc(0x0000000000000000)))), :(bvand_cvc(bvnot_cvc(_arg_1), _arg_1)), :(smol_cvc(ehad_cvc(smol_cvc(_arg_1)))), :(smol_cvc(arba_cvc(smol_cvc(_arg_1)))), :(arba_cvc(bvxor_cvc(0x0000000000000001, 0x0000000000000001))), :(bvxor_cvc(0x0000000000000001, arba_cvc(_arg_1))), :(ehad_cvc(bvnot_cvc(0x0000000000000001))), :(ehad_cvc(0x0000000000000000)), :(bvor_cvc(_arg_1, arba_cvc(0x0000000000000001))), :(bvxor_cvc(arba_cvc(0x0000000000000001), _arg_1)), :(bvadd_cvc(ehad_cvc(_arg_1), 0x0000000000000001)), :(bvand_cvc(0x0000000000000000, _arg_1)), :(ehad_cvc(bvxor_cvc(0x0000000000000001, _arg_1))), :(bvadd_cvc(ehad_cvc(0x0000000000000001), 0x0000000000000001)), :(arba_cvc(ehad_cvc(0x0000000000000001))), :(bvor_cvc(ehad_cvc(0x0000000000000000), 0x0000000000000000)), :(arba_cvc(bvor_cvc(0x0000000000000001, _arg_1))), :(bvnot_cvc(bvand_cvc(0x0000000000000000, 0x0000000000000000))), :(shesh_cvc(bvxor_cvc(_arg_1, _arg_1))), :(smol_cvc(bvor_cvc(0x0000000000000000, 0x0000000000000001))), :(smol_cvc(smol_cvc(shesh_cvc(0x0000000000000001)))), :(bvand_cvc(0x0000000000000001, bvnot_cvc(_arg_1))), :(bvnot_cvc(bvxor_cvc(_arg_1, _arg_1))), :(shesh_cvc(shesh_cvc(shesh_cvc(0x0000000000000001)))), :(bvor_cvc(0x0000000000000000, bvnot_cvc(0x0000000000000000))), :(smol_cvc(ehad_cvc(ehad_cvc(0x0000000000000000)))), :(bvxor_cvc(arba_cvc(_arg_1), 0x0000000000000000)), :(smol_cvc(bvadd_cvc(0x0000000000000001, _arg_1))), :(bvxor_cvc(0x0000000000000001, bvnot_cvc(_arg_1))), :(arba_cvc(smol_cvc(bvnot_cvc(0x0000000000000000)))), :(bvadd_cvc(0x0000000000000001, shesh_cvc(0x0000000000000001))), :(bvand_cvc(bvnot_cvc(0x0000000000000000), 0x0000000000000000)), :(bvand_cvc(_arg_1, smol_cvc(_arg_1))), :(arba_cvc(smol_cvc(shesh_cvc(0x0000000000000000)))), :(bvxor_cvc(_arg_1, 0x0000000000000001)), :(bvand_cvc(0x0000000000000000, bvnot_cvc(0x0000000000000001))), :(ehad_cvc(ehad_cvc(arba_cvc(0x0000000000000001)))), :(bvnot_cvc(arba_cvc(arba_cvc(0x0000000000000000)))), :(bvor_cvc(0x0000000000000000, 0x0000000000000001)), :(smol_cvc(arba_cvc(bvnot_cvc(_arg_1)))), :(ehad_cvc(bvadd_cvc(_arg_1, 0x0000000000000000))), :(shesh_cvc(bvxor_cvc(0x0000000000000000, _arg_1))), :(shesh_cvc(shesh_cvc(ehad_cvc(0x0000000000000001)))), :(bvand_cvc(smol_cvc(0x0000000000000001), 0x0000000000000001)), :(smol_cvc(ehad_cvc(shesh_cvc(0x0000000000000000)))), :(arba_cvc(ehad_cvc(ehad_cvc(0x0000000000000000)))), :(smol_cvc(arba_cvc(0x0000000000000001))), :(bvor_cvc(_arg_1, 0x0000000000000001)), :(bvand_cvc(ehad_cvc(0x0000000000000000), 0x0000000000000000)), :(smol_cvc(bvnot_cvc(shesh_cvc(_arg_1)))), :(shesh_cvc(smol_cvc(shesh_cvc(0x0000000000000000)))), :(bvadd_cvc(0x0000000000000000, ehad_cvc(_arg_1))), :(bvadd_cvc(bvnot_cvc(0x0000000000000001), _arg_1)), 0x0000000000000001, :(bvnot_cvc(bvnot_cvc(arba_cvc(0x0000000000000000)))), :(bvnot_cvc(bvadd_cvc(0x0000000000000001, 0x0000000000000000))), :(smol_cvc(bvnot_cvc(0x0000000000000001))), :(bvadd_cvc(0x0000000000000001, arba_cvc(_arg_1))), :(ehad_cvc(shesh_cvc(bvnot_cvc(0x0000000000000001)))), :(ehad_cvc(smol_cvc(arba_cvc(_arg_1)))), :(arba_cvc(bvand_cvc(0x0000000000000001, 0x0000000000000001))), :(ehad_cvc(arba_cvc(0x0000000000000000))), :(shesh_cvc(bvadd_cvc(_arg_1, 0x0000000000000001))), :(bvxor_cvc(0x0000000000000001, shesh_cvc(0x0000000000000001))), :(smol_cvc(smol_cvc(arba_cvc(0x0000000000000000)))), :(bvor_cvc(shesh_cvc(0x0000000000000001), _arg_1)), :(ehad_cvc(ehad_cvc(smol_cvc(_arg_1)))), :(ehad_cvc(bvxor_cvc(_arg_1, _arg_1))), :(arba_cvc(shesh_cvc(ehad_cvc(0x0000000000000001)))), :(bvadd_cvc(0x0000000000000001, arba_cvc(0x0000000000000000))), :(bvand_cvc(shesh_cvc(0x0000000000000000), _arg_1)), :(bvxor_cvc(0x0000000000000001, smol_cvc(0x0000000000000001))), :(smol_cvc(smol_cvc(smol_cvc(0x0000000000000001)))), :(bvnot_cvc(shesh_cvc(0x0000000000000000))), :(bvxor_cvc(0x0000000000000000, arba_cvc(_arg_1))), :(ehad_cvc(bvand_cvc(0x0000000000000000, 0x0000000000000001))), :(bvor_cvc(0x0000000000000001, bvnot_cvc(0x0000000000000000))), :(ehad_cvc(bvnot_cvc(arba_cvc(0x0000000000000000)))), :(ehad_cvc(arba_cvc(arba_cvc(0x0000000000000000)))), :(arba_cvc(ehad_cvc(shesh_cvc(0x0000000000000001)))), :(bvxor_cvc(_arg_1, shesh_cvc(0x0000000000000001))), :(bvadd_cvc(_arg_1, ehad_cvc(0x0000000000000001))), :(bvxor_cvc(smol_cvc(0x0000000000000001), 0x0000000000000001)), :(bvxor_cvc(0x0000000000000000, bvnot_cvc(0x0000000000000000))), :(ehad_cvc(shesh_cvc(_arg_1))), :(shesh_cvc(shesh_cvc(_arg_1))), :(bvand_cvc(ehad_cvc(0x0000000000000001), _arg_1)), :(bvnot_cvc(shesh_cvc(shesh_cvc(0x0000000000000000)))), :(bvnot_cvc(bvnot_cvc(smol_cvc(0x0000000000000001)))), :(bvor_cvc(0x0000000000000001, smol_cvc(_arg_1))), :(bvor_cvc(ehad_cvc(0x0000000000000000), _arg_1)), :(bvor_cvc(shesh_cvc(0x0000000000000000), 0x0000000000000000)), :(bvor_cvc(smol_cvc(_arg_1), 0x0000000000000001)), :(bvadd_cvc(shesh_cvc(_arg_1), _arg_1)), :(bvnot_cvc(bvnot_cvc(ehad_cvc(0x0000000000000000)))), :(bvxor_cvc(0x0000000000000000, arba_cvc(0x0000000000000001))), :(arba_cvc(arba_cvc(shesh_cvc(_arg_1)))), :(arba_cvc(bvnot_cvc(arba_cvc(0x0000000000000000)))), :(arba_cvc(bvnot_cvc(shesh_cvc(_arg_1)))), :(ehad_cvc(bvor_cvc(0x0000000000000001, 0x0000000000000001))), :(bvnot_cvc(bvnot_cvc(smol_cvc(_arg_1)))), :(bvxor_cvc(shesh_cvc(0x0000000000000001), 0x0000000000000001)), :(bvadd_cvc(0x0000000000000001, ehad_cvc(_arg_1))), :(bvnot_cvc(smol_cvc(arba_cvc(_arg_1)))), :(ehad_cvc(smol_cvc(ehad_cvc(0x0000000000000001)))), :(shesh_cvc(bvnot_cvc(_arg_1))), :(bvnot_cvc(bvnot_cvc(arba_cvc(_arg_1)))), :(arba_cvc(ehad_cvc(smol_cvc(0x0000000000000001)))), :(bvor_cvc(_arg_1, smol_cvc(0x0000000000000001))), :(shesh_cvc(arba_cvc(arba_cvc(0x0000000000000000)))), :(ehad_cvc(arba_cvc(ehad_cvc(_arg_1)))), :(bvand_cvc(ehad_cvc(0x0000000000000000), _arg_1)), :(arba_cvc(shesh_cvc(_arg_1))), :(im_cvc(_arg_1, 0x0000000000000000, _arg_1)), :(arba_cvc(smol_cvc(0x0000000000000000))), :(ehad_cvc(arba_cvc(shesh_cvc(0x0000000000000000)))), :(arba_cvc(arba_cvc(bvnot_cvc(0x0000000000000001)))), :(arba_cvc(0x0000000000000001)), :(bvxor_cvc(bvnot_cvc(0x0000000000000000), 0x0000000000000000)), :(ehad_cvc(shesh_cvc(bvnot_cvc(_arg_1)))), :(smol_cvc(ehad_cvc(bvnot_cvc(0x0000000000000000)))), :(smol_cvc(bvnot_cvc(shesh_cvc(0x0000000000000000)))), :(bvxor_cvc(bvnot_cvc(0x0000000000000000), _arg_1)), :(bvnot_cvc(shesh_cvc(smol_cvc(_arg_1)))), :(bvadd_cvc(smol_cvc(_arg_1), _arg_1)), :(smol_cvc(bvand_cvc(_arg_1, 0x0000000000000000))), :(smol_cvc(arba_cvc(ehad_cvc(0x0000000000000001)))), :(bvxor_cvc(_arg_1, smol_cvc(0x0000000000000000))), :(bvnot_cvc(shesh_cvc(_arg_1))), :(bvnot_cvc(smol_cvc(ehad_cvc(0x0000000000000001)))), :(smol_cvc(shesh_cvc(bvnot_cvc(0x0000000000000000)))), :(bvnot_cvc(bvnot_cvc(shesh_cvc(_arg_1)))), :(im_cvc(0x0000000000000000, 0x0000000000000000, 0x0000000000000000)), :(smol_cvc(bvnot_cvc(_arg_1))), :(ehad_cvc(ehad_cvc(arba_cvc(_arg_1)))), :(bvor_cvc(_arg_1, arba_cvc(_arg_1))), :(ehad_cvc(smol_cvc(bvnot_cvc(0x0000000000000001)))), :(bvxor_cvc(ehad_cvc(0x0000000000000000), 0x0000000000000000)), :(smol_cvc(bvand_cvc(0x0000000000000001, 0x0000000000000001))), :(bvand_cvc(_arg_1, smol_cvc(0x0000000000000000))), :(bvnot_cvc(_arg_1)), :(arba_cvc(bvand_cvc(_arg_1, _arg_1))), :(bvxor_cvc(0x0000000000000000, shesh_cvc(0x0000000000000000))), :(smol_cvc(bvxor_cvc(0x0000000000000001, 0x0000000000000001))), :(shesh_cvc(bvnot_cvc(smol_cvc(0x0000000000000001)))), :(smol_cvc(bvand_cvc(0x0000000000000000, _arg_1))), :(smol_cvc(bvnot_cvc(smol_cvc(0x0000000000000001)))), :(shesh_cvc(smol_cvc(arba_cvc(_arg_1)))), :(bvxor_cvc(shesh_cvc(_arg_1), _arg_1)), :(ehad_cvc(bvnot_cvc(ehad_cvc(_arg_1)))), :(arba_cvc(arba_cvc(smol_cvc(_arg_1)))), :(bvxor_cvc(smol_cvc(0x0000000000000001), _arg_1)), :(ehad_cvc(bvadd_cvc(0x0000000000000000, _arg_1))), :(arba_cvc(bvnot_cvc(0x0000000000000000))), :(bvnot_cvc(smol_cvc(bvnot_cvc(0x0000000000000001)))), :(shesh_cvc(bvor_cvc(_arg_1, 0x0000000000000000))), :(shesh_cvc(ehad_cvc(ehad_cvc(_arg_1)))), :(arba_cvc(bvadd_cvc(0x0000000000000001, 0x0000000000000000))), :(bvxor_cvc(_arg_1, ehad_cvc(_arg_1))), :(smol_cvc(bvand_cvc(_arg_1, _arg_1))), :(bvadd_cvc(0x0000000000000000, ehad_cvc(0x0000000000000000))), :(im_cvc(0x0000000000000001, 0x0000000000000000, 0x0000000000000000)), :(ehad_cvc(bvand_cvc(_arg_1, _arg_1))), :(shesh_cvc(bvnot_cvc(smol_cvc(_arg_1)))), :(smol_cvc(bvor_cvc(_arg_1, _arg_1))), :(bvor_cvc(bvnot_cvc(0x0000000000000000), 0x0000000000000000)), :(shesh_cvc(arba_cvc(bvnot_cvc(0x0000000000000001)))), :(bvnot_cvc(arba_cvc(arba_cvc(_arg_1)))), :(arba_cvc(arba_cvc(smol_cvc(0x0000000000000000)))), :(bvor_cvc(smol_cvc(0x0000000000000000), 0x0000000000000000)), :(bvxor_cvc(0x0000000000000000, smol_cvc(_arg_1))), :(bvxor_cvc(0x0000000000000000, ehad_cvc(0x0000000000000000))), :(smol_cvc(ehad_cvc(0x0000000000000001))), :(bvand_cvc(0x0000000000000000, 0x0000000000000000)), :(smol_cvc(shesh_cvc(ehad_cvc(0x0000000000000001)))), :(ehad_cvc(ehad_cvc(shesh_cvc(_arg_1)))), :(bvxor_cvc(0x0000000000000001, smol_cvc(_arg_1))), :(arba_cvc(bvor_cvc(0x0000000000000001, 0x0000000000000001))), :(smol_cvc(bvor_cvc(0x0000000000000001, _arg_1))), :(bvor_cvc(0x0000000000000001, arba_cvc(0x0000000000000000))), :(smol_cvc(shesh_cvc(shesh_cvc(0x0000000000000001)))), :(arba_cvc(smol_cvc(ehad_cvc(0x0000000000000000)))), :(bvnot_cvc(bvadd_cvc(0x0000000000000000, 0x0000000000000001))), :(bvnot_cvc(0x0000000000000000)), :(bvxor_cvc(ehad_cvc(_arg_1), 0x0000000000000000)), :(bvand_cvc(arba_cvc(_arg_1), 0x0000000000000001)), :(bvnot_cvc(shesh_cvc(bvnot_cvc(0x0000000000000000)))), :(ehad_cvc(bvnot_cvc(smol_cvc(0x0000000000000001)))), :(bvadd_cvc(0x0000000000000001, _arg_1)), :(bvxor_cvc(0x0000000000000000, smol_cvc(0x0000000000000000))), :(bvor_cvc(_arg_1, ehad_cvc(0x0000000000000001))), :(bvor_cvc(shesh_cvc(0x0000000000000000), _arg_1)), :(bvxor_cvc(0x0000000000000000, 0x0000000000000000)), :(shesh_cvc(bvadd_cvc(0x0000000000000000, _arg_1))), :(smol_cvc(smol_cvc(smol_cvc(_arg_1)))), :(shesh_cvc(bvnot_cvc(bvnot_cvc(0x0000000000000000)))), :(shesh_cvc(bvnot_cvc(0x0000000000000000))), :(im_cvc(0x0000000000000000, _arg_1, 0x0000000000000000)), :(bvadd_cvc(shesh_cvc(_arg_1), 0x0000000000000001)), :(bvnot_cvc(smol_cvc(shesh_cvc(_arg_1)))), :(ehad_cvc(bvxor_cvc(0x0000000000000001, 0x0000000000000000))), :(shesh_cvc(arba_cvc(shesh_cvc(0x0000000000000000)))), :(bvor_cvc(bvnot_cvc(0x0000000000000001), _arg_1)), :(smol_cvc(smol_cvc(0x0000000000000001))), :(smol_cvc(arba_cvc(bvnot_cvc(0x0000000000000001)))), :(shesh_cvc(bvor_cvc(0x0000000000000000, _arg_1))), :(bvnot_cvc(bvxor_cvc(_arg_1, 0x0000000000000001))), :(ehad_cvc(bvxor_cvc(_arg_1, 0x0000000000000001))), :(arba_cvc(ehad_cvc(bvnot_cvc(0x0000000000000000)))), :(bvand_cvc(_arg_1, 0x0000000000000000)), :(bvand_cvc(arba_cvc(0x0000000000000001), 0x0000000000000000)), :(bvxor_cvc(smol_cvc(0x0000000000000000), _arg_1)), :(ehad_cvc(bvadd_cvc(0x0000000000000000, 0x0000000000000000))), :(bvxor_cvc(shesh_cvc(_arg_1), 0x0000000000000001)), :(bvnot_cvc(bvand_cvc(_arg_1, 0x0000000000000000))), :(bvadd_cvc(_arg_1, smol_cvc(0x0000000000000001))), :(bvadd_cvc(shesh_cvc(0x0000000000000001), 0x0000000000000000)), :(bvor_cvc(smol_cvc(0x0000000000000001), _arg_1)), :(bvnot_cvc(ehad_cvc(bvnot_cvc(_arg_1)))), :(bvadd_cvc(0x0000000000000001, 0x0000000000000000)), :(bvnot_cvc(ehad_cvc(0x0000000000000001))), :(shesh_cvc(bvand_cvc(0x0000000000000001, 0x0000000000000001))), :(bvnot_cvc(bvadd_cvc(_arg_1, 0x0000000000000001))), :(bvnot_cvc(smol_cvc(arba_cvc(0x0000000000000000)))), :(bvadd_cvc(0x0000000000000000, smol_cvc(0x0000000000000000))), :(smol_cvc(bvadd_cvc(_arg_1, _arg_1))), :(bvnot_cvc(arba_cvc(bvnot_cvc(0x0000000000000001)))), :(bvnot_cvc(shesh_cvc(arba_cvc(_arg_1)))), :(bvor_cvc(arba_cvc(0x0000000000000001), 0x0000000000000001)), :(bvxor_cvc(_arg_1, _arg_1)), :(arba_cvc(bvxor_cvc(0x0000000000000001, 0x0000000000000000))), :(shesh_cvc(bvxor_cvc(0x0000000000000001, 0x0000000000000001))), :(ehad_cvc(arba_cvc(bvnot_cvc(0x0000000000000001)))), :(arba_cvc(smol_cvc(bvnot_cvc(_arg_1)))), :(shesh_cvc(bvadd_cvc(0x0000000000000001, _arg_1))), :(ehad_cvc(bvnot_cvc(0x0000000000000000))), :(smol_cvc(shesh_cvc(_arg_1))), :(arba_cvc(arba_cvc(arba_cvc(0x0000000000000001)))), :(bvor_cvc(_arg_1, arba_cvc(0x0000000000000000))), :(bvnot_cvc(shesh_cvc(smol_cvc(0x0000000000000001)))), :(bvadd_cvc(ehad_cvc(_arg_1), 0x0000000000000000)), :(ehad_cvc(bvadd_cvc(_arg_1, _arg_1))), :(arba_cvc(bvadd_cvc(0x0000000000000001, _arg_1))), :(bvadd_cvc(ehad_cvc(0x0000000000000001), 0x0000000000000000)), :(bvor_cvc(0x0000000000000001, ehad_cvc(0x0000000000000001))), :(arba_cvc(ehad_cvc(0x0000000000000000))), :(bvor_cvc(0x0000000000000000, smol_cvc(0x0000000000000001))), :(smol_cvc(bvxor_cvc(0x0000000000000001, _arg_1))), :(smol_cvc(bvor_cvc(0x0000000000000000, 0x0000000000000000))), :(smol_cvc(smol_cvc(shesh_cvc(0x0000000000000000)))), :(shesh_cvc(shesh_cvc(shesh_cvc(0x0000000000000000)))), :(bvor_cvc(_arg_1, bvnot_cvc(0x0000000000000001))), :(ehad_cvc(bvnot_cvc(bvnot_cvc(0x0000000000000001)))), :(ehad_cvc(ehad_cvc(smol_cvc(0x0000000000000001)))), :(bvadd_cvc(0x0000000000000001, shesh_cvc(0x0000000000000000))), :(im_cvc(_arg_1, 0x0000000000000001, _arg_1)), :(bvor_cvc(0x0000000000000000, bvnot_cvc(_arg_1))), :(arba_cvc(shesh_cvc(bvnot_cvc(0x0000000000000001)))), :(bvxor_cvc(_arg_1, 0x0000000000000000)), :(bvand_cvc(0x0000000000000000, bvnot_cvc(0x0000000000000000))), :(ehad_cvc(ehad_cvc(arba_cvc(0x0000000000000000)))), :(bvadd_cvc(0x0000000000000001, smol_cvc(0x0000000000000001))), :(bvand_cvc(0x0000000000000000, ehad_cvc(_arg_1))), :(bvor_cvc(0x0000000000000000, 0x0000000000000000)), :(bvand_cvc(_arg_1, shesh_cvc(_arg_1))), :(bvadd_cvc(_arg_1, smol_cvc(_arg_1))), :(smol_cvc(bvnot_cvc(ehad_cvc(0x0000000000000001)))), :(bvand_cvc(0x0000000000000000, shesh_cvc(_arg_1))), :(smol_cvc(bvxor_cvc(0x0000000000000000, _arg_1))), :(bvand_cvc(smol_cvc(0x0000000000000001), 0x0000000000000000)), :(smol_cvc(bvnot_cvc(arba_cvc(_arg_1)))), :(shesh_cvc(shesh_cvc(ehad_cvc(0x0000000000000000)))), :(bvand_cvc(0x0000000000000001, shesh_cvc(0x0000000000000001))), :(smol_cvc(arba_cvc(0x0000000000000000))), :(bvor_cvc(_arg_1, 0x0000000000000000)), 0x0000000000000000, :(ehad_cvc(arba_cvc(smol_cvc(_arg_1)))), :(smol_cvc(bvnot_cvc(0x0000000000000000))), :(im_cvc(_arg_1, 0x0000000000000001, 0x0000000000000001)), :(ehad_cvc(shesh_cvc(bvnot_cvc(0x0000000000000000)))), :(arba_cvc(bvand_cvc(0x0000000000000001, 0x0000000000000000))), :(arba_cvc(bvadd_cvc(0x0000000000000000, _arg_1))), :(shesh_cvc(bvadd_cvc(_arg_1, 0x0000000000000000))), :(bvxor_cvc(0x0000000000000001, shesh_cvc(0x0000000000000000))), :(bvadd_cvc(_arg_1, bvnot_cvc(_arg_1))), :(arba_cvc(shesh_cvc(ehad_cvc(0x0000000000000000)))), :(arba_cvc(arba_cvc(_arg_1))), :(arba_cvc(bvadd_cvc(0x0000000000000000, 0x0000000000000001))), :(bvadd_cvc(_arg_1, shesh_cvc(0x0000000000000001))), :(arba_cvc(bvor_cvc(_arg_1, _arg_1))), :(bvxor_cvc(0x0000000000000001, smol_cvc(0x0000000000000000))), :(bvadd_cvc(arba_cvc(0x0000000000000001), 0x0000000000000001)), :(smol_cvc(shesh_cvc(ehad_cvc(_arg_1)))), :(smol_cvc(smol_cvc(smol_cvc(0x0000000000000000)))), :(ehad_cvc(bvand_cvc(0x0000000000000000, 0x0000000000000000))), :(smol_cvc(bvor_cvc(_arg_1, smol_cvc(_arg_1)))), :(arba_cvc(bvxor_cvc(_arg_1, 0x0000000000000001))), :(bvnot_cvc(arba_cvc(shesh_cvc(0x0000000000000001)))), :(shesh_cvc(ehad_cvc(bvnot_cvc(_arg_1)))), :(bvxor_cvc(_arg_1, bvnot_cvc(_arg_1))), :(bvand_cvc(0x0000000000000001, smol_cvc(_arg_1))), :(bvadd_cvc(0x0000000000000000, arba_cvc(0x0000000000000001))), :(arba_cvc(shesh_cvc(shesh_cvc(0x0000000000000001)))), :(arba_cvc(ehad_cvc(shesh_cvc(0x0000000000000000)))), :(im_cvc(0x0000000000000001, _arg_1, 0x0000000000000001)), :(bvadd_cvc(bvnot_cvc(0x0000000000000000), _arg_1)), :(bvxor_cvc(_arg_1, shesh_cvc(0x0000000000000000))), :(bvxor_cvc(ehad_cvc(_arg_1), _arg_1)), :(bvand_cvc(_arg_1, bvnot_cvc(0x0000000000000001))), :(arba_cvc(ehad_cvc(bvnot_cvc(_arg_1)))), :(bvnot_cvc(bvor_cvc(_arg_1, _arg_1))), :(bvadd_cvc(_arg_1, ehad_cvc(0x0000000000000000))), :(bvxor_cvc(smol_cvc(0x0000000000000001), 0x0000000000000000)), :(arba_cvc(arba_cvc(arba_cvc(_arg_1)))), :(bvxor_cvc(0x0000000000000001, arba_cvc(0x0000000000000001))), :(bvnot_cvc(bvnot_cvc(smol_cvc(0x0000000000000000)))), :(bvor_cvc(arba_cvc(0x0000000000000000), _arg_1)), :(bvand_cvc(0x0000000000000000, smol_cvc(0x0000000000000001))), :(bvor_cvc(0x0000000000000001, shesh_cvc(0x0000000000000001))), :(bvor_cvc(smol_cvc(_arg_1), 0x0000000000000000)), :(bvxor_cvc(0x0000000000000000, arba_cvc(0x0000000000000000))), :(smol_cvc(shesh_cvc(shesh_cvc(_arg_1)))), :(ehad_cvc(bvor_cvc(0x0000000000000001, 0x0000000000000000))), :(bvor_cvc(0x0000000000000001, smol_cvc(0x0000000000000001))), :(ehad_cvc(bvxor_cvc(0x0000000000000000, 0x0000000000000001))), :(ehad_cvc(arba_cvc(bvnot_cvc(_arg_1)))), :(arba_cvc(arba_cvc(0x0000000000000001))), :(bvxor_cvc(shesh_cvc(0x0000000000000001), 0x0000000000000000)), :(smol_cvc(arba_cvc(shesh_cvc(_arg_1)))), :(ehad_cvc(arba_cvc(smol_cvc(0x0000000000000001)))), :(bvand_cvc(arba_cvc(0x0000000000000000), 0x0000000000000001)), :(bvadd_cvc(smol_cvc(0x0000000000000001), 0x0000000000000001)), :(shesh_cvc(ehad_cvc(0x0000000000000001))), :(ehad_cvc(smol_cvc(ehad_cvc(0x0000000000000000)))), :(bvadd_cvc(shesh_cvc(0x0000000000000000), 0x0000000000000001)), :(smol_cvc(shesh_cvc(bvnot_cvc(_arg_1)))), :(arba_cvc(ehad_cvc(smol_cvc(0x0000000000000000)))), :(bvor_cvc(_arg_1, smol_cvc(0x0000000000000000))), :(ehad_cvc(smol_cvc(0x0000000000000001))), :(shesh_cvc(arba_cvc(shesh_cvc(_arg_1)))), :(bvadd_cvc(0x0000000000000000, 0x0000000000000001)), :(smol_cvc(bvnot_cvc(smol_cvc(_arg_1)))), :(smol_cvc(arba_cvc(arba_cvc(0x0000000000000001)))), :(shesh_cvc(smol_cvc(smol_cvc(_arg_1)))), :(shesh_cvc(ehad_cvc(bvnot_cvc(0x0000000000000001)))), :(bvnot_cvc(ehad_cvc(arba_cvc(0x0000000000000001)))), :(smol_cvc(arba_cvc(smol_cvc(0x0000000000000001)))), :(bvnot_cvc(bvadd_cvc(0x0000000000000000, _arg_1))), :(arba_cvc(arba_cvc(bvnot_cvc(0x0000000000000000)))), :(arba_cvc(smol_cvc(_arg_1))), :(arba_cvc(bvxor_cvc(0x0000000000000000, 0x0000000000000001))), :(arba_cvc(0x0000000000000000)), :(ehad_cvc(shesh_cvc(ehad_cvc(_arg_1)))), :(shesh_cvc(bvnot_cvc(shesh_cvc(0x0000000000000001)))), :(bvor_cvc(_arg_1, shesh_cvc(0x0000000000000001))), :(bvadd_cvc(0x0000000000000000, shesh_cvc(_arg_1))), :(bvor_cvc(_arg_1, _arg_1)), :(bvnot_cvc(shesh_cvc(ehad_cvc(0x0000000000000001)))), :(smol_cvc(arba_cvc(ehad_cvc(0x0000000000000000)))), :(smol_cvc(smol_cvc(bvnot_cvc(_arg_1)))), :(arba_cvc(arba_cvc(bvnot_cvc(_arg_1)))), :(bvand_cvc(_arg_1, ehad_cvc(0x0000000000000001))), :(bvnot_cvc(shesh_cvc(arba_cvc(0x0000000000000001)))), :(bvnot_cvc(shesh_cvc(shesh_cvc(_arg_1)))), :(ehad_cvc(smol_cvc(arba_cvc(0x0000000000000001)))), :(bvnot_cvc(smol_cvc(ehad_cvc(0x0000000000000000)))), :(bvadd_cvc(ehad_cvc(0x0000000000000000), 0x0000000000000001)), :(bvand_cvc(bvnot_cvc(0x0000000000000000), _arg_1)), :(bvadd_cvc(bvnot_cvc(0x0000000000000001), 0x0000000000000001)), :(bvand_cvc(_arg_1, ehad_cvc(_arg_1))), :(shesh_cvc(bvxor_cvc(_arg_1, 0x0000000000000001))), :(ehad_cvc(arba_cvc(ehad_cvc(0x0000000000000001)))), :(arba_cvc(ehad_cvc(arba_cvc(0x0000000000000001)))), :(shesh_cvc(smol_cvc(bvnot_cvc(0x0000000000000001)))), :(smol_cvc(arba_cvc(shesh_cvc(0x0000000000000001)))), :(ehad_cvc(smol_cvc(bvnot_cvc(0x0000000000000000)))), :(smol_cvc(ehad_cvc(ehad_cvc(_arg_1)))), :(bvxor_cvc(bvnot_cvc(_arg_1), _arg_1)), :(smol_cvc(bvand_cvc(0x0000000000000001, 0x0000000000000000))), :(smol_cvc(ehad_cvc(_arg_1))), :(ehad_cvc(ehad_cvc(bvnot_cvc(0x0000000000000001)))), :(smol_cvc(bvxor_cvc(0x0000000000000001, 0x0000000000000000))), :(shesh_cvc(bvnot_cvc(smol_cvc(0x0000000000000000)))), :(bvxor_cvc(0x0000000000000001, _arg_1)), :(smol_cvc(bvnot_cvc(smol_cvc(0x0000000000000000)))), :(ehad_cvc(bvand_cvc(0x0000000000000001, _arg_1))), :(bvand_cvc(0x0000000000000001, arba_cvc(0x0000000000000001))), :(bvor_cvc(_arg_1, shesh_cvc(_arg_1))), :(arba_cvc(bvadd_cvc(_arg_1, 0x0000000000000001))), :(bvadd_cvc(bvnot_cvc(_arg_1), 0x0000000000000001)), :(shesh_cvc(shesh_cvc(smol_cvc(0x0000000000000001)))), :(bvxor_cvc(ehad_cvc(0x0000000000000000), _arg_1)), :(bvnot_cvc(smol_cvc(bvnot_cvc(0x0000000000000000)))), :(shesh_cvc(bvor_cvc(0x0000000000000001, 0x0000000000000001))), :(arba_cvc(_arg_1)), :(smol_cvc(bvadd_cvc(0x0000000000000001, 0x0000000000000001))), :(bvxor_cvc(arba_cvc(0x0000000000000001), 0x0000000000000001)), :(bvnot_cvc(bvadd_cvc(0x0000000000000001, _arg_1))), :(ehad_cvc(shesh_cvc(smol_cvc(_arg_1)))), :(arba_cvc(smol_cvc(arba_cvc(0x0000000000000001)))), :(bvnot_cvc(ehad_cvc(arba_cvc(_arg_1)))), :(smol_cvc(arba_cvc(ehad_cvc(_arg_1)))), :(shesh_cvc(bvnot_cvc(bvnot_cvc(_arg_1)))), :(bvor_cvc(_arg_1, ehad_cvc(_arg_1))), :(shesh_cvc(arba_cvc(bvnot_cvc(0x0000000000000000)))), :(bvand_cvc(smol_cvc(0x0000000000000000), 0x0000000000000001)), :(bvnot_cvc(bvor_cvc(0x0000000000000000, _arg_1))), :(bvnot_cvc(bvxor_cvc(0x0000000000000001, 0x0000000000000001))), :(smol_cvc(ehad_cvc(0x0000000000000000))), :(arba_cvc(arba_cvc(ehad_cvc(0x0000000000000001)))), :(smol_cvc(shesh_cvc(ehad_cvc(0x0000000000000000)))), :(ehad_cvc(smol_cvc(_arg_1))), :(arba_cvc(bvor_cvc(0x0000000000000001, 0x0000000000000000))), :(ehad_cvc(smol_cvc(shesh_cvc(0x0000000000000001)))), :(smol_cvc(shesh_cvc(shesh_cvc(0x0000000000000000)))), :(shesh_cvc(bvand_cvc(_arg_1, 0x0000000000000001))), :(arba_cvc(bvand_cvc(0x0000000000000000, 0x0000000000000001))), :(bvnot_cvc(bvadd_cvc(0x0000000000000000, 0x0000000000000000))), :(bvand_cvc(arba_cvc(_arg_1), 0x0000000000000000)), :(shesh_cvc(bvadd_cvc(0x0000000000000001, 0x0000000000000001))), :(arba_cvc(shesh_cvc(arba_cvc(0x0000000000000001)))), :(shesh_cvc(ehad_cvc(shesh_cvc(0x0000000000000001)))), :(shesh_cvc(bvor_cvc(0x0000000000000001, _arg_1))), :(ehad_cvc(bvnot_cvc(smol_cvc(0x0000000000000000)))), :(bvor_cvc(0x0000000000000000, arba_cvc(0x0000000000000001))), :(im_cvc(0x0000000000000001, _arg_1, _arg_1)), :(bvnot_cvc(bvadd_cvc(_arg_1, _arg_1))), :(bvor_cvc(_arg_1, ehad_cvc(0x0000000000000000))), :(bvxor_cvc(ehad_cvc(0x0000000000000001), _arg_1)), :(bvor_cvc(ehad_cvc(0x0000000000000001), _arg_1)), :(bvand_cvc(shesh_cvc(0x0000000000000001), 0x0000000000000001)), :(arba_cvc(smol_cvc(smol_cvc(0x0000000000000001)))), :(bvnot_cvc(bvnot_cvc(_arg_1))), :(bvadd_cvc(shesh_cvc(_arg_1), 0x0000000000000000)), :(smol_cvc(shesh_cvc(0x0000000000000001))), :(bvand_cvc(shesh_cvc(_arg_1), _arg_1)), :(shesh_cvc(arba_cvc(arba_cvc(_arg_1)))), :(smol_cvc(smol_cvc(0x0000000000000000))), :(arba_cvc(bvnot_cvc(bvnot_cvc(0x0000000000000001)))), :(smol_cvc(arba_cvc(bvnot_cvc(0x0000000000000000)))), :(bvnot_cvc(bvxor_cvc(_arg_1, 0x0000000000000000))), :(im_cvc(0x0000000000000001, 0x0000000000000000, _arg_1)), :(ehad_cvc(bvxor_cvc(_arg_1, 0x0000000000000000))), :(bvxor_cvc(shesh_cvc(_arg_1), 0x0000000000000000)), :(bvxor_cvc(smol_cvc(0x0000000000000000), 0x0000000000000001)), :(shesh_cvc(arba_cvc(bvnot_cvc(_arg_1)))), :(im_cvc(0x0000000000000001, 0x0000000000000001, _arg_1)), :(bvnot_cvc(arba_cvc(smol_cvc(0x0000000000000001)))), :(bvadd_cvc(_arg_1, smol_cvc(0x0000000000000000))), :(ehad_cvc(bvor_cvc(0x0000000000000000, _arg_1))), :(bvand_cvc(bvnot_cvc(0x0000000000000001), _arg_1)), :(bvnot_cvc(ehad_cvc(0x0000000000000000))), :(arba_cvc(smol_cvc(shesh_cvc(_arg_1)))), :(im_cvc(_arg_1, _arg_1, _arg_1)), :(shesh_cvc(bvand_cvc(0x0000000000000001, 0x0000000000000000))), :(bvnot_cvc(bvor_cvc(0x0000000000000001, 0x0000000000000001))), :(shesh_cvc(ehad_cvc(arba_cvc(_arg_1)))), :(bvnot_cvc(bvadd_cvc(_arg_1, 0x0000000000000000))), :(ehad_cvc(bvor_cvc(0x0000000000000000, 0x0000000000000001))), :(ehad_cvc(bvadd_cvc(0x0000000000000001, _arg_1))), :(bvnot_cvc(arba_cvc(bvnot_cvc(0x0000000000000000)))), :(ehad_cvc(bvxor_cvc(0x0000000000000000, _arg_1))), :(bvadd_cvc(shesh_cvc(0x0000000000000001), _arg_1)), :(bvor_cvc(bvnot_cvc(_arg_1), 0x0000000000000001)), :(bvxor_cvc(shesh_cvc(0x0000000000000000), 0x0000000000000001)), :(ehad_cvc(shesh_cvc(smol_cvc(0x0000000000000001)))), :(shesh_cvc(smol_cvc(shesh_cvc(_arg_1)))), :(bvor_cvc(arba_cvc(0x0000000000000001), 0x0000000000000000)), :(bvor_cvc(0x0000000000000000, shesh_cvc(0x0000000000000001))), :(shesh_cvc(bvxor_cvc(0x0000000000000001, 0x0000000000000000))), :(ehad_cvc(arba_cvc(bvnot_cvc(0x0000000000000000)))), :(bvxor_cvc(shesh_cvc(0x0000000000000001), _arg_1)), :(arba_cvc(arba_cvc(shesh_cvc(0x0000000000000001)))), :(arba_cvc(bvand_cvc(_arg_1, 0x0000000000000001))), :(arba_cvc(shesh_cvc(bvnot_cvc(_arg_1)))), :(bvand_cvc(_arg_1, arba_cvc(0x0000000000000001))), :(bvnot_cvc(bvor_cvc(_arg_1, 0x0000000000000001))), :(bvnot_cvc(bvor_cvc(0x0000000000000001, _arg_1))), :(bvnot_cvc(ehad_cvc(shesh_cvc(_arg_1)))), :(arba_cvc(arba_cvc(arba_cvc(0x0000000000000000)))), :(shesh_cvc(ehad_cvc(smol_cvc(_arg_1)))), :(bvnot_cvc(shesh_cvc(smol_cvc(0x0000000000000000)))), :(bvnot_cvc(arba_cvc(bvnot_cvc(_arg_1)))), :(bvxor_cvc(arba_cvc(0x0000000000000000), _arg_1)), :(smol_cvc(smol_cvc(ehad_cvc(0x0000000000000001)))), :(bvor_cvc(0x0000000000000001, ehad_cvc(0x0000000000000000))), :(bvxor_cvc(shesh_cvc(0x0000000000000000), _arg_1)), :(bvor_cvc(0x0000000000000000, smol_cvc(0x0000000000000000))), :(shesh_cvc(bvnot_cvc(ehad_cvc(0x0000000000000001)))), :(bvor_cvc(ehad_cvc(0x0000000000000001), 0x0000000000000001)), :(bvnot_cvc(bvand_cvc(0x0000000000000001, 0x0000000000000001))), :(smol_cvc(smol_cvc(arba_cvc(_arg_1)))), :(bvadd_cvc(0x0000000000000001, ehad_cvc(0x0000000000000001))), :(ehad_cvc(bvand_cvc(_arg_1, 0x0000000000000001))), :(ehad_cvc(ehad_cvc(_arg_1))), :(bvand_cvc(_arg_1, shesh_cvc(0x0000000000000001))), :(smol_cvc(bvxor_cvc(_arg_1, 0x0000000000000001))), :(bvor_cvc(_arg_1, bvnot_cvc(0x0000000000000000))), :(bvadd_cvc(_arg_1, arba_cvc(_arg_1))), :(ehad_cvc(bvnot_cvc(bvnot_cvc(0x0000000000000000)))), :(bvor_cvc(shesh_cvc(_arg_1), _arg_1)), :(bvnot_cvc(bvnot_cvc(0x0000000000000001))), :(bvor_cvc(0x0000000000000000, smol_cvc(_arg_1))), :(bvadd_cvc(_arg_1, bvnot_cvc(0x0000000000000001))), :(ehad_cvc(ehad_cvc(smol_cvc(0x0000000000000000)))), :(ehad_cvc(shesh_cvc(ehad_cvc(0x0000000000000001)))), :(bvand_cvc(0x0000000000000001, ehad_cvc(0x0000000000000001))), :(smol_cvc(smol_cvc(bvnot_cvc(0x0000000000000001)))), :(arba_cvc(bvnot_cvc(shesh_cvc(0x0000000000000001)))), :(bvand_cvc(bvnot_cvc(0x0000000000000001), 0x0000000000000001)), :(arba_cvc(shesh_cvc(bvnot_cvc(0x0000000000000000)))), :(bvor_cvc(ehad_cvc(_arg_1), 0x0000000000000001)), :(bvand_cvc(_arg_1, _arg_1)), :(ehad_cvc(shesh_cvc(arba_cvc(_arg_1)))), :(bvadd_cvc(0x0000000000000001, smol_cvc(0x0000000000000000))), :(bvxor_cvc(arba_cvc(_arg_1), _arg_1)), :(ehad_cvc(bvnot_cvc(_arg_1))), :(smol_cvc(bvnot_cvc(ehad_cvc(0x0000000000000000)))), :(bvnot_cvc(smol_cvc(smol_cvc(_arg_1)))), :(smol_cvc(bvand_cvc(0x0000000000000000, 0x0000000000000001))), :(shesh_cvc(bvor_cvc(_arg_1, _arg_1))), :(bvand_cvc(0x0000000000000001, shesh_cvc(0x0000000000000000))), :(bvand_cvc(ehad_cvc(0x0000000000000001), 0x0000000000000001)), :(smol_cvc(smol_cvc(_arg_1))), :(smol_cvc(bvxor_cvc(0x0000000000000000, 0x0000000000000001))), :(ehad_cvc(smol_cvc(smol_cvc(_arg_1)))), :(ehad_cvc(bvand_cvc(0x0000000000000000, _arg_1))), :(im_cvc(_arg_1, 0x0000000000000001, 0x0000000000000000)), :(bvnot_cvc(ehad_cvc(_arg_1))), :(arba_cvc(bvadd_cvc(0x0000000000000000, 0x0000000000000000))), :(bvadd_cvc(_arg_1, shesh_cvc(0x0000000000000000))), :(bvxor_cvc(0x0000000000000000, shesh_cvc(_arg_1))), :(bvadd_cvc(arba_cvc(0x0000000000000001), 0x0000000000000000)), :(bvnot_cvc(arba_cvc(shesh_cvc(_arg_1)))), :(bvor_cvc(bvnot_cvc(0x0000000000000000), _arg_1)), :(arba_cvc(bvxor_cvc(_arg_1, 0x0000000000000000))), :(bvnot_cvc(arba_cvc(shesh_cvc(0x0000000000000000)))), :(shesh_cvc(ehad_cvc(ehad_cvc(0x0000000000000001)))), :(shesh_cvc(smol_cvc(smol_cvc(0x0000000000000001)))), :(bvadd_cvc(0x0000000000000000, arba_cvc(0x0000000000000000))), :(bvxor_cvc(0x0000000000000001, bvnot_cvc(0x0000000000000001))), :(arba_cvc(bvor_cvc(0x0000000000000000, 0x0000000000000001))), :(bvand_cvc(0x0000000000000000, ehad_cvc(0x0000000000000001))), :(bvand_cvc(shesh_cvc(_arg_1), 0x0000000000000001)), :(im_cvc(0x0000000000000001, _arg_1, 0x0000000000000000)), :(smol_cvc(shesh_cvc(smol_cvc(0x0000000000000001)))), :(arba_cvc(ehad_cvc(ehad_cvc(_arg_1)))), :(arba_cvc(shesh_cvc(shesh_cvc(0x0000000000000000)))), :(smol_cvc(bvnot_cvc(ehad_cvc(_arg_1)))), :(bvand_cvc(_arg_1, bvnot_cvc(0x0000000000000000))), :(shesh_cvc(bvand_cvc(_arg_1, _arg_1))), :(smol_cvc(arba_cvc(_arg_1))), :(ehad_cvc(bvor_cvc(0x0000000000000001, _arg_1))), :(smol_cvc(ehad_cvc(smol_cvc(0x0000000000000001)))), :(bvadd_cvc(smol_cvc(0x0000000000000001), _arg_1)), :(bvxor_cvc(0x0000000000000001, arba_cvc(0x0000000000000000))), :(arba_cvc(bvxor_cvc(_arg_1, _arg_1))), :(bvand_cvc(0x0000000000000000, smol_cvc(0x0000000000000000))), :(bvor_cvc(0x0000000000000001, shesh_cvc(0x0000000000000000))), :(bvor_cvc(shesh_cvc(0x0000000000000001), 0x0000000000000001)), :(smol_cvc(bvand_cvc(0x0000000000000001, _arg_1))), :(bvand_cvc(0x0000000000000000, shesh_cvc(0x0000000000000001))), :(shesh_cvc(shesh_cvc(bvnot_cvc(0x0000000000000001)))), :(bvor_cvc(0x0000000000000001, smol_cvc(0x0000000000000000))), :(bvand_cvc(ehad_cvc(_arg_1), 0x0000000000000001)), :(ehad_cvc(bvxor_cvc(0x0000000000000000, 0x0000000000000000))), :(bvand_cvc(ehad_cvc(_arg_1), _arg_1)), :(arba_cvc(arba_cvc(0x0000000000000000))), :(arba_cvc(bvnot_cvc(smol_cvc(0x0000000000000001)))), :(bvand_cvc(shesh_cvc(0x0000000000000001), _arg_1)), :(bvor_cvc(0x0000000000000001, arba_cvc(_arg_1))), :(ehad_cvc(arba_cvc(smol_cvc(0x0000000000000000)))), :(arba_cvc(shesh_cvc(smol_cvc(_arg_1)))), :(bvand_cvc(arba_cvc(0x0000000000000000), 0x0000000000000000)), :(bvadd_cvc(smol_cvc(0x0000000000000001), 0x0000000000000000)), :(shesh_cvc(ehad_cvc(0x0000000000000000))), :(bvadd_cvc(shesh_cvc(0x0000000000000000), 0x0000000000000000)), :(ehad_cvc(ehad_cvc(ehad_cvc(0x0000000000000001)))), :(bvnot_cvc(bvnot_cvc(ehad_cvc(_arg_1)))), :(ehad_cvc(smol_cvc(0x0000000000000000))), :(bvadd_cvc(0x0000000000000000, 0x0000000000000000)), :(smol_cvc(arba_cvc(arba_cvc(0x0000000000000000)))), :(shesh_cvc(bvand_cvc(0x0000000000000000, 0x0000000000000001))), :(arba_cvc(bvor_cvc(_arg_1, 0x0000000000000001))), :(shesh_cvc(ehad_cvc(bvnot_cvc(0x0000000000000000)))), :(smol_cvc(ehad_cvc(bvnot_cvc(_arg_1)))), :(bvnot_cvc(ehad_cvc(arba_cvc(0x0000000000000000)))), :(shesh_cvc(ehad_cvc(arba_cvc(0x0000000000000001)))), :(bvor_cvc(shesh_cvc(_arg_1), 0x0000000000000001)), :(smol_cvc(arba_cvc(smol_cvc(0x0000000000000000)))), :(shesh_cvc(arba_cvc(0x0000000000000001))), :(shesh_cvc(smol_cvc(ehad_cvc(0x0000000000000001)))), :(bvor_cvc(0x0000000000000001, bvnot_cvc(_arg_1))), :(bvor_cvc(arba_cvc(0x0000000000000000), 0x0000000000000001)), :(arba_cvc(bvxor_cvc(0x0000000000000000, 0x0000000000000000))), :(shesh_cvc(bvxor_cvc(0x0000000000000000, 0x0000000000000001))), :(bvxor_cvc(bvnot_cvc(0x0000000000000001), 0x0000000000000001)), :(arba_cvc(ehad_cvc(arba_cvc(_arg_1)))), :(smol_cvc(ehad_cvc(arba_cvc(0x0000000000000001)))), :(shesh_cvc(bvnot_cvc(shesh_cvc(0x0000000000000000)))), :(bvor_cvc(_arg_1, shesh_cvc(0x0000000000000000))), :(bvnot_cvc(shesh_cvc(ehad_cvc(0x0000000000000000)))), :(shesh_cvc(ehad_cvc(_arg_1))), :(bvand_cvc(_arg_1, ehad_cvc(0x0000000000000000))), :(bvnot_cvc(shesh_cvc(arba_cvc(0x0000000000000000)))), :(ehad_cvc(smol_cvc(arba_cvc(0x0000000000000000)))), :(bvnot_cvc(shesh_cvc(ehad_cvc(_arg_1)))), :(arba_cvc(shesh_cvc(0x0000000000000001))), :(bvor_cvc(0x0000000000000000, ehad_cvc(_arg_1))), :(bvadd_cvc(ehad_cvc(0x0000000000000000), 0x0000000000000000)), :(bvadd_cvc(_arg_1, 0x0000000000000001)), :(bvadd_cvc(bvnot_cvc(0x0000000000000001), 0x0000000000000000)), :(ehad_cvc(arba_cvc(ehad_cvc(0x0000000000000000)))), :(shesh_cvc(bvxor_cvc(_arg_1, 0x0000000000000000))), :_arg_1, :(arba_cvc(ehad_cvc(arba_cvc(0x0000000000000000)))), :(shesh_cvc(smol_cvc(ehad_cvc(_arg_1)))), :(im_cvc(0x0000000000000000, 0x0000000000000001, 0x0000000000000001)), :(shesh_cvc(smol_cvc(bvnot_cvc(0x0000000000000000)))), :(smol_cvc(arba_cvc(shesh_cvc(0x0000000000000000)))), :(bvnot_cvc(shesh_cvc(bvnot_cvc(_arg_1)))), :(bvxor_cvc(ehad_cvc(0x0000000000000001), 0x0000000000000001)), :(shesh_cvc(shesh_cvc(ehad_cvc(_arg_1)))), :(bvand_cvc(0x0000000000000001, ehad_cvc(_arg_1))), :(bvadd_cvc(arba_cvc(_arg_1), 0x0000000000000001)), :(bvand_cvc(0x0000000000000000, bvnot_cvc(_arg_1))), :(ehad_cvc(ehad_cvc(bvnot_cvc(0x0000000000000000)))), :(bvand_cvc(0x0000000000000001, arba_cvc(0x0000000000000000))), :(arba_cvc(bvadd_cvc(_arg_1, 0x0000000000000000))), :(bvadd_cvc(bvnot_cvc(_arg_1), 0x0000000000000000)), :(shesh_cvc(shesh_cvc(smol_cvc(0x0000000000000000)))), :(ehad_cvc(ehad_cvc(bvnot_cvc(_arg_1)))), :(shesh_cvc(bvor_cvc(0x0000000000000001, 0x0000000000000000))), :(bvxor_cvc(0x0000000000000001, ehad_cvc(_arg_1))), :(smol_cvc(bvadd_cvc(0x0000000000000001, 0x0000000000000000))), :(bvxor_cvc(arba_cvc(0x0000000000000001), 0x0000000000000000)), :(arba_cvc(smol_cvc(arba_cvc(0x0000000000000000)))), :(im_cvc(0x0000000000000001, 0x0000000000000001, 0x0000000000000001)), :(ehad_cvc(ehad_cvc(shesh_cvc(0x0000000000000001)))), :(shesh_cvc(arba_cvc(smol_cvc(0x0000000000000001)))), :(bvand_cvc(smol_cvc(0x0000000000000000), _arg_1)), :(bvor_cvc(bvnot_cvc(0x0000000000000001), 0x0000000000000001)), :(bvand_cvc(0x0000000000000001, _arg_1)), :(bvand_cvc(smol_cvc(0x0000000000000000), 0x0000000000000000)), :(bvand_cvc(0x0000000000000000, arba_cvc(0x0000000000000001))), :(bvor_cvc(smol_cvc(0x0000000000000001), 0x0000000000000001)), :(bvnot_cvc(bvxor_cvc(0x0000000000000001, 0x0000000000000000))), :(arba_cvc(arba_cvc(ehad_cvc(0x0000000000000000)))), :(smol_cvc(bvnot_cvc(bvnot_cvc(0x0000000000000001)))), :(bvand_cvc(0x0000000000000001, 0x0000000000000001)), :(ehad_cvc(bvnot_cvc(bvnot_cvc(_arg_1)))), :(bvnot_cvc(smol_cvc(0x0000000000000001))), :(ehad_cvc(smol_cvc(shesh_cvc(0x0000000000000000)))), :(bvnot_cvc(smol_cvc(_arg_1))), :(shesh_cvc(bvand_cvc(_arg_1, 0x0000000000000000))), :(arba_cvc(bvand_cvc(0x0000000000000000, 0x0000000000000000))), :(im_cvc(_arg_1, 0x0000000000000000, 0x0000000000000001)), :(shesh_cvc(bvadd_cvc(0x0000000000000001, 0x0000000000000000))), :(arba_cvc(shesh_cvc(arba_cvc(0x0000000000000000)))), :(shesh_cvc(ehad_cvc(shesh_cvc(0x0000000000000000)))), :(bvxor_cvc(_arg_1, shesh_cvc(_arg_1))), :(bvor_cvc(0x0000000000000000, arba_cvc(0x0000000000000000))), :(bvadd_cvc(arba_cvc(0x0000000000000000), _arg_1)), :(bvor_cvc(0x0000000000000001, ehad_cvc(_arg_1))), :(bvand_cvc(0x0000000000000001, bvnot_cvc(0x0000000000000001))), :(bvand_cvc(bvnot_cvc(_arg_1), 0x0000000000000001)), :(bvadd_cvc(arba_cvc(0x0000000000000000), 0x0000000000000001)), :(bvand_cvc(0x0000000000000001, smol_cvc(0x0000000000000001))), :(bvadd_cvc(0x0000000000000000, arba_cvc(_arg_1))), :(bvxor_cvc(0x0000000000000001, 0x0000000000000001)), :(bvand_cvc(shesh_cvc(0x0000000000000001), 0x0000000000000000)), :(arba_cvc(smol_cvc(smol_cvc(0x0000000000000000)))), :(smol_cvc(shesh_cvc(0x0000000000000000))), :(bvxor_cvc(smol_cvc(_arg_1), 0x0000000000000001)), :(ehad_cvc(shesh_cvc(shesh_cvc(0x0000000000000001)))), :(shesh_cvc(bvnot_cvc(ehad_cvc(_arg_1)))), :(shesh_cvc(smol_cvc(0x0000000000000001))), :(shesh_cvc(0x0000000000000001)), :(shesh_cvc(smol_cvc(arba_cvc(0x0000000000000001)))), :(arba_cvc(bvnot_cvc(bvnot_cvc(0x0000000000000000)))), :(arba_cvc(ehad_cvc(smol_cvc(_arg_1)))), :(bvadd_cvc(ehad_cvc(0x0000000000000000), _arg_1)), :(bvand_cvc(0x0000000000000001, arba_cvc(_arg_1))), :(bvor_cvc(arba_cvc(_arg_1), 0x0000000000000001)), :(smol_cvc(smol_cvc(shesh_cvc(_arg_1)))), :(smol_cvc(0x0000000000000001)), :(ehad_cvc(bvadd_cvc(0x0000000000000001, 0x0000000000000001))), :(bvxor_cvc(smol_cvc(0x0000000000000000), 0x0000000000000000)), :(bvxor_cvc(bvnot_cvc(0x0000000000000001), _arg_1)), :(bvadd_cvc(bvnot_cvc(_arg_1), _arg_1)), :(bvnot_cvc(arba_cvc(smol_cvc(0x0000000000000000)))), :(bvnot_cvc(bvand_cvc(0x0000000000000000, _arg_1))), :(smol_cvc(bvor_cvc(_arg_1, 0x0000000000000001))), :(shesh_cvc(shesh_cvc(smol_cvc(_arg_1)))), :(bvnot_cvc(bvor_cvc(0x0000000000000001, 0x0000000000000000))), :(bvnot_cvc(bvnot_cvc(shesh_cvc(0x0000000000000001)))), :(smol_cvc(bvnot_cvc(arba_cvc(0x0000000000000001)))), :(bvadd_cvc(ehad_cvc(_arg_1), _arg_1)), :(bvand_cvc(smol_cvc(_arg_1), _arg_1)), :(ehad_cvc(bvor_cvc(0x0000000000000000, 0x0000000000000000))), :(shesh_cvc(smol_cvc(_arg_1))), :(shesh_cvc(ehad_cvc(smol_cvc(0x0000000000000001)))), :(bvor_cvc(bvnot_cvc(_arg_1), 0x0000000000000000)), :(bvxor_cvc(shesh_cvc(0x0000000000000000), 0x0000000000000000)), :(ehad_cvc(shesh_cvc(smol_cvc(0x0000000000000000)))), :(bvor_cvc(0x0000000000000000, shesh_cvc(0x0000000000000000))), :(arba_cvc(arba_cvc(shesh_cvc(0x0000000000000000)))), :(arba_cvc(bvand_cvc(_arg_1, 0x0000000000000000))), :(bvnot_cvc(bvor_cvc(_arg_1, 0x0000000000000000))), :(bvand_cvc(_arg_1, arba_cvc(0x0000000000000000))), :(bvxor_cvc(_arg_1, bvnot_cvc(0x0000000000000001))), :(bvand_cvc(_arg_1, arba_cvc(_arg_1))), :(bvadd_cvc(smol_cvc(0x0000000000000000), 0x0000000000000001)), :(ehad_cvc(_arg_1)), :(bvadd_cvc(0x0000000000000001, bvnot_cvc(0x0000000000000001))), :(bvnot_cvc(arba_cvc(_arg_1))), :(bvand_cvc(arba_cvc(0x0000000000000000), _arg_1)), :(shesh_cvc(shesh_cvc(arba_cvc(_arg_1)))), :(smol_cvc(smol_cvc(ehad_cvc(0x0000000000000000)))), :(bvadd_cvc(arba_cvc(_arg_1), _arg_1)), :(bvadd_cvc(_arg_1, _arg_1)), :(shesh_cvc(arba_cvc(ehad_cvc(_arg_1)))), :(shesh_cvc(bvnot_cvc(ehad_cvc(0x0000000000000000)))), :(bvor_cvc(ehad_cvc(0x0000000000000001), 0x0000000000000000)), :(bvnot_cvc(bvand_cvc(0x0000000000000001, 0x0000000000000000))), :(arba_cvc(smol_cvc(ehad_cvc(_arg_1)))), :(smol_cvc(bvor_cvc(0x0000000000000001, 0x0000000000000001))), :(ehad_cvc(bvand_cvc(_arg_1, 0x0000000000000000))), :(bvadd_cvc(0x0000000000000001, ehad_cvc(0x0000000000000000))), :(bvand_cvc(_arg_1, shesh_cvc(0x0000000000000000))), :(shesh_cvc(shesh_cvc(shesh_cvc(_arg_1)))), :(smol_cvc(bvxor_cvc(_arg_1, 0x0000000000000000))), :(ehad_cvc(smol_cvc(bvnot_cvc(_arg_1)))), :(bvadd_cvc(0x0000000000000001, smol_cvc(_arg_1))), :(smol_cvc(shesh_cvc(arba_cvc(0x0000000000000001)))), :(ehad_cvc(arba_cvc(_arg_1))), :(shesh_cvc(bvnot_cvc(arba_cvc(0x0000000000000001)))), :(bvnot_cvc(bvnot_cvc(0x0000000000000000))), :(bvnot_cvc(ehad_cvc(shesh_cvc(0x0000000000000001)))), :(bvadd_cvc(_arg_1, bvnot_cvc(0x0000000000000000))), :(shesh_cvc(arba_cvc(ehad_cvc(0x0000000000000001)))), :(bvor_cvc(0x0000000000000000, ehad_cvc(0x0000000000000001))), :(ehad_cvc(shesh_cvc(ehad_cvc(0x0000000000000000)))), :(bvand_cvc(0x0000000000000001, ehad_cvc(0x0000000000000000))), :(im_cvc(0x0000000000000000, 0x0000000000000000, _arg_1)), :(smol_cvc(smol_cvc(bvnot_cvc(0x0000000000000000)))), :(arba_cvc(bvnot_cvc(shesh_cvc(0x0000000000000000)))), :(arba_cvc(shesh_cvc(smol_cvc(0x0000000000000001)))), :(bvand_cvc(bvnot_cvc(0x0000000000000001), 0x0000000000000000)), :(smol_cvc(ehad_cvc(arba_cvc(_arg_1)))), :(bvor_cvc(ehad_cvc(_arg_1), 0x0000000000000000)), :(bvadd_cvc(0x0000000000000000, bvnot_cvc(0x0000000000000001))), :(bvxor_cvc(_arg_1, arba_cvc(0x0000000000000001))), :(bvadd_cvc(bvnot_cvc(0x0000000000000000), 0x0000000000000001)), :(bvor_cvc(0x0000000000000001, 0x0000000000000001)), :(arba_cvc(shesh_cvc(arba_cvc(_arg_1)))), :(ehad_cvc(shesh_cvc(0x0000000000000001))), :(ehad_cvc(shesh_cvc(arba_cvc(0x0000000000000001)))), :(smol_cvc(bvand_cvc(0x0000000000000000, 0x0000000000000000))), :(bvand_cvc(ehad_cvc(0x0000000000000001), 0x0000000000000000)), :(smol_cvc(bvxor_cvc(0x0000000000000000, 0x0000000000000000))), :(bvxor_cvc(0x0000000000000001, ehad_cvc(0x0000000000000001))), :(shesh_cvc(bvor_cvc(0x0000000000000000, 0x0000000000000001))), :(smol_cvc(bvadd_cvc(0x0000000000000000, 0x0000000000000001))), :(bvxor_cvc(arba_cvc(0x0000000000000000), 0x0000000000000001)), :(im_cvc(_arg_1, _arg_1, 0x0000000000000001)), :(ehad_cvc(bvnot_cvc(shesh_cvc(_arg_1)))), :(bvxor_cvc(0x0000000000000001, shesh_cvc(_arg_1))), :(arba_cvc(bvnot_cvc(ehad_cvc(0x0000000000000001)))), :(bvor_cvc(0x0000000000000001, shesh_cvc(_arg_1))), :(bvnot_cvc(arba_cvc(0x0000000000000001))), :(bvnot_cvc(arba_cvc(ehad_cvc(_arg_1)))), :(shesh_cvc(shesh_cvc(0x0000000000000001))), :(ehad_cvc(bvand_cvc(0x0000000000000001, 0x0000000000000001))), :(bvadd_cvc(0x0000000000000000, smol_cvc(_arg_1))), :(bvnot_cvc(ehad_cvc(smol_cvc(_arg_1)))), :(bvnot_cvc(bvxor_cvc(0x0000000000000000, 0x0000000000000001))), :(shesh_cvc(bvxor_cvc(0x0000000000000001, _arg_1))), :(bvnot_cvc(ehad_cvc(smol_cvc(0x0000000000000001)))), :(shesh_cvc(ehad_cvc(ehad_cvc(0x0000000000000000)))), :(shesh_cvc(smol_cvc(smol_cvc(0x0000000000000000)))), :(smol_cvc(bvadd_cvc(_arg_1, 0x0000000000000001))), :(bvxor_cvc(0x0000000000000001, bvnot_cvc(0x0000000000000000))), :(arba_cvc(bvor_cvc(0x0000000000000000, 0x0000000000000000))), :(bvand_cvc(0x0000000000000000, ehad_cvc(0x0000000000000000))), :(bvand_cvc(shesh_cvc(_arg_1), 0x0000000000000000)), :(bvnot_cvc(smol_cvc(shesh_cvc(0x0000000000000001)))), :(smol_cvc(shesh_cvc(smol_cvc(0x0000000000000000)))), :(ehad_cvc(bvnot_cvc(smol_cvc(_arg_1)))), :(shesh_cvc(bvadd_cvc(_arg_1, _arg_1))), :(shesh_cvc(bvadd_cvc(0x0000000000000000, 0x0000000000000001))), :(smol_cvc(ehad_cvc(smol_cvc(0x0000000000000000)))), :(bvand_cvc(0x0000000000000001, shesh_cvc(_arg_1))), :(bvnot_cvc(bvnot_cvc(bvnot_cvc(0x0000000000000001)))), :(bvnot_cvc(bvnot_cvc(bvnot_cvc(_arg_1)))), :(bvnot_cvc(arba_cvc(ehad_cvc(0x0000000000000001)))), :(bvand_cvc(shesh_cvc(0x0000000000000000), 0x0000000000000001)), :(bvor_cvc(shesh_cvc(0x0000000000000001), 0x0000000000000000)), :(bvor_cvc(0x0000000000000000, arba_cvc(_arg_1))), :(ehad_cvc(shesh_cvc(shesh_cvc(_arg_1)))), :(ehad_cvc(ehad_cvc(0x0000000000000001))), :(bvand_cvc(0x0000000000000000, shesh_cvc(0x0000000000000000))), :(shesh_cvc(shesh_cvc(bvnot_cvc(0x0000000000000000)))), :(ehad_cvc(smol_cvc(shesh_cvc(_arg_1)))), :(bvnot_cvc(smol_cvc(smol_cvc(0x0000000000000001)))), :(ehad_cvc(bvnot_cvc(ehad_cvc(0x0000000000000001)))), :(bvand_cvc(ehad_cvc(_arg_1), 0x0000000000000000)), :(ehad_cvc(smol_cvc(ehad_cvc(_arg_1)))), :(bvor_cvc(smol_cvc(_arg_1), _arg_1)), :(bvnot_cvc(ehad_cvc(bvnot_cvc(0x0000000000000001)))), :(arba_cvc(bvand_cvc(0x0000000000000001, _arg_1))), :(arba_cvc(bvnot_cvc(smol_cvc(0x0000000000000000)))), :(ehad_cvc(bvnot_cvc(shesh_cvc(0x0000000000000001)))), :(bvxor_cvc(bvnot_cvc(_arg_1), 0x0000000000000001)), :(bvnot_cvc(ehad_cvc(ehad_cvc(0x0000000000000001)))), :(bvor_cvc(_arg_1, smol_cvc(_arg_1))), :(bvadd_cvc(_arg_1, arba_cvc(0x0000000000000001))), :(bvxor_cvc(_arg_1, ehad_cvc(0x0000000000000001))), :(bvadd_cvc(0x0000000000000000, shesh_cvc(0x0000000000000001))), :(ehad_cvc(ehad_cvc(ehad_cvc(0x0000000000000000)))), :(ehad_cvc(bvor_cvc(_arg_1, 0x0000000000000001))), :(arba_cvc(shesh_cvc(shesh_cvc(_arg_1)))), :(shesh_cvc(bvand_cvc(0x0000000000000001, _arg_1))), :(bvand_cvc(arba_cvc(_arg_1), _arg_1)), :(shesh_cvc(bvand_cvc(0x0000000000000000, 0x0000000000000000))), :(arba_cvc(bvor_cvc(_arg_1, 0x0000000000000000))), :(arba_cvc(shesh_cvc(ehad_cvc(_arg_1)))), :(shesh_cvc(shesh_cvc(arba_cvc(0x0000000000000001)))), :(bvnot_cvc(bvor_cvc(0x0000000000000000, 0x0000000000000001))), :(bvand_cvc(smol_cvc(_arg_1), 0x0000000000000001)), :(bvadd_cvc(smol_cvc(_arg_1), 0x0000000000000001)), :(shesh_cvc(ehad_cvc(arba_cvc(0x0000000000000000)))), :(bvor_cvc(shesh_cvc(_arg_1), 0x0000000000000000)), :(shesh_cvc(arba_cvc(_arg_1))), :(shesh_cvc(arba_cvc(0x0000000000000000))), :(shesh_cvc(smol_cvc(ehad_cvc(0x0000000000000000)))), :(ehad_cvc(smol_cvc(smol_cvc(0x0000000000000001)))), :(bvor_cvc(arba_cvc(0x0000000000000000), 0x0000000000000000)), :(shesh_cvc(bvxor_cvc(0x0000000000000000, 0x0000000000000000))), :(bvxor_cvc(bvnot_cvc(0x0000000000000001), 0x0000000000000000)), :(smol_cvc(ehad_cvc(arba_cvc(0x0000000000000000)))), :(bvadd_cvc(_arg_1, shesh_cvc(_arg_1))), :(ehad_cvc(0x0000000000000001)), :(smol_cvc(ehad_cvc(shesh_cvc(_arg_1)))), :(bvnot_cvc(bvxor_cvc(0x0000000000000000, _arg_1))), :(arba_cvc(shesh_cvc(0x0000000000000000))), :(bvadd_cvc(_arg_1, 0x0000000000000000)), :(bvor_cvc(ehad_cvc(0x0000000000000000), 0x0000000000000001)), :(bvnot_cvc(bvand_cvc(0x0000000000000000, 0x0000000000000001))), :(im_cvc(0x0000000000000000, 0x0000000000000001, 0x0000000000000000)), :(bvnot_cvc(bvand_cvc(0x0000000000000001, _arg_1))), :(ehad_cvc(arba_cvc(shesh_cvc(_arg_1)))), :(bvxor_cvc(ehad_cvc(0x0000000000000001), 0x0000000000000000)), :(bvor_cvc(0x0000000000000000, bvnot_cvc(0x0000000000000001))), :(bvadd_cvc(arba_cvc(_arg_1), 0x0000000000000000)), :(smol_cvc(ehad_cvc(ehad_cvc(0x0000000000000001)))), :(shesh_cvc(shesh_cvc(bvnot_cvc(_arg_1)))), :(bvxor_cvc(arba_cvc(_arg_1), 0x0000000000000001)), :(smol_cvc(smol_cvc(ehad_cvc(_arg_1)))), :(arba_cvc(arba_cvc(ehad_cvc(_arg_1)))), :(bvor_cvc(arba_cvc(_arg_1), _arg_1)), :(bvadd_cvc(smol_cvc(0x0000000000000000), _arg_1)), :(arba_cvc(smol_cvc(bvnot_cvc(0x0000000000000001)))), :(bvand_cvc(bvnot_cvc(0x0000000000000000), 0x0000000000000001)), :(bvor_cvc(ehad_cvc(_arg_1), _arg_1)), :(arba_cvc(smol_cvc(shesh_cvc(0x0000000000000001)))), :(bvnot_cvc(arba_cvc(arba_cvc(0x0000000000000001)))), :(im_cvc(0x0000000000000001, 0x0000000000000001, 0x0000000000000000)), :(ehad_cvc(ehad_cvc(shesh_cvc(0x0000000000000000)))), :(shesh_cvc(arba_cvc(smol_cvc(0x0000000000000000)))), :(ehad_cvc(bvadd_cvc(_arg_1, 0x0000000000000001))), :(bvor_cvc(bvnot_cvc(0x0000000000000001), 0x0000000000000000)), :(bvnot_cvc(smol_cvc(bvnot_cvc(_arg_1)))), :(bvand_cvc(0x0000000000000000, arba_cvc(0x0000000000000000))), :(smol_cvc(ehad_cvc(shesh_cvc(0x0000000000000001)))), :(bvor_cvc(smol_cvc(0x0000000000000001), 0x0000000000000000)), :(bvand_cvc(ehad_cvc(0x0000000000000000), 0x0000000000000001)), :(arba_cvc(ehad_cvc(ehad_cvc(0x0000000000000001)))), :(bvand_cvc(0x0000000000000001, 0x0000000000000000)), :(smol_cvc(bvnot_cvc(bvnot_cvc(0x0000000000000000)))), :(shesh_cvc(smol_cvc(shesh_cvc(0x0000000000000001)))), :(arba_cvc(bvadd_cvc(_arg_1, _arg_1))), :(bvand_cvc(arba_cvc(0x0000000000000001), _arg_1)), :(bvnot_cvc(smol_cvc(0x0000000000000000))), :(bvxor_cvc(0x0000000000000000, bvnot_cvc(_arg_1))), :(bvadd_cvc(ehad_cvc(0x0000000000000001), _arg_1)), :(bvnot_cvc(bvnot_cvc(arba_cvc(0x0000000000000001)))), :(bvxor_cvc(_arg_1, arba_cvc(_arg_1))), :(shesh_cvc(arba_cvc(smol_cvc(_arg_1)))), :(ehad_cvc(arba_cvc(0x0000000000000001))), :(smol_cvc(smol_cvc(arba_cvc(0x0000000000000001)))), :(bvnot_cvc(bvadd_cvc(0x0000000000000001, 0x0000000000000001))), :(im_cvc(_arg_1, 0x0000000000000000, 0x0000000000000000)), :(smol_cvc(bvor_cvc(0x0000000000000000, _arg_1))), :(shesh_cvc(_arg_1)), :(bvand_cvc(0x0000000000000001, bvnot_cvc(0x0000000000000000))), :(bvadd_cvc(0x0000000000000001, arba_cvc(0x0000000000000001))), :(bvand_cvc(bvnot_cvc(_arg_1), 0x0000000000000000)), :(bvadd_cvc(arba_cvc(0x0000000000000000), 0x0000000000000000)), :(ehad_cvc(bvor_cvc(_arg_1, _arg_1))), :(bvand_cvc(0x0000000000000001, smol_cvc(0x0000000000000000))), :(arba_cvc(bvnot_cvc(_arg_1))), :(bvxor_cvc(0x0000000000000001, 0x0000000000000000)), :(bvnot_cvc(shesh_cvc(0x0000000000000001))), :(bvor_cvc(0x0000000000000001, bvnot_cvc(0x0000000000000001))), :(ehad_cvc(bvnot_cvc(arba_cvc(0x0000000000000001)))), :(shesh_cvc(ehad_cvc(shesh_cvc(_arg_1)))), :(arba_cvc(ehad_cvc(_arg_1))), :(bvxor_cvc(smol_cvc(_arg_1), 0x0000000000000000)), :(ehad_cvc(shesh_cvc(shesh_cvc(0x0000000000000000)))), :(bvnot_cvc(arba_cvc(smol_cvc(_arg_1)))), :(shesh_cvc(smol_cvc(0x0000000000000000))), :(bvand_cvc(0x0000000000000000, arba_cvc(_arg_1))), :(shesh_cvc(smol_cvc(arba_cvc(0x0000000000000000)))), :(shesh_cvc(0x0000000000000000)), :(ehad_cvc(arba_cvc(arba_cvc(0x0000000000000001)))), :(arba_cvc(smol_cvc(arba_cvc(_arg_1)))), :(bvor_cvc(arba_cvc(_arg_1), 0x0000000000000000)), :(bvnot_cvc(bvand_cvc(_arg_1, _arg_1))), :(smol_cvc(0x0000000000000000)), :(ehad_cvc(bvadd_cvc(0x0000000000000001, 0x0000000000000000))), :(bvor_cvc(arba_cvc(0x0000000000000001), _arg_1)), :(bvadd_cvc(_arg_1, ehad_cvc(_arg_1))), :(bvxor_cvc(0x0000000000000000, bvnot_cvc(0x0000000000000001))), :(bvadd_cvc(0x0000000000000001, shesh_cvc(_arg_1))), :(bvnot_cvc(shesh_cvc(shesh_cvc(0x0000000000000001)))), :(smol_cvc(_arg_1)), :(smol_cvc(bvor_cvc(_arg_1, 0x0000000000000000))), :(bvor_cvc(shesh_cvc(0x0000000000000000), 0x0000000000000001)), :(bvnot_cvc(bvnot_cvc(shesh_cvc(0x0000000000000000)))), :(smol_cvc(bvnot_cvc(arba_cvc(0x0000000000000000)))), :(arba_cvc(bvnot_cvc(arba_cvc(_arg_1)))), :(bvnot_cvc(bvnot_cvc(ehad_cvc(0x0000000000000001)))), :(arba_cvc(bvnot_cvc(arba_cvc(0x0000000000000001)))), :(arba_cvc(bvxor_cvc(0x0000000000000001, _arg_1))), :(shesh_cvc(ehad_cvc(smol_cvc(0x0000000000000000)))), :(arba_cvc(bvand_cvc(0x0000000000000000, _arg_1))), :(bvadd_cvc(smol_cvc(0x0000000000000000), 0x0000000000000000)), :(bvxor_cvc(_arg_1, bvnot_cvc(0x0000000000000000))), :(bvadd_cvc(0x0000000000000001, bvnot_cvc(0x0000000000000000))), :(bvxor_cvc(_arg_1, smol_cvc(_arg_1))), :(shesh_cvc(arba_cvc(arba_cvc(0x0000000000000001)))), :(smol_cvc(shesh_cvc(arba_cvc(_arg_1)))), :(shesh_cvc(smol_cvc(bvnot_cvc(_arg_1)))), :(bvor_cvc(smol_cvc(0x0000000000000000), _arg_1)), :(bvor_cvc(_arg_1, bvnot_cvc(_arg_1))), :(smol_cvc(bvor_cvc(0x0000000000000001, 0x0000000000000000))), :(bvxor_cvc(0x0000000000000000, ehad_cvc(_arg_1))), :(arba_cvc(smol_cvc(0x0000000000000001))), :(smol_cvc(arba_cvc(arba_cvc(_arg_1)))), :(bvxor_cvc(0x0000000000000000, _arg_1)), :(ehad_cvc(arba_cvc(shesh_cvc(0x0000000000000001)))), :(bvor_cvc(0x0000000000000000, shesh_cvc(_arg_1))), :(arba_cvc(ehad_cvc(shesh_cvc(_arg_1)))), :(arba_cvc(bvxor_cvc(0x0000000000000000, _arg_1))), :(smol_cvc(shesh_cvc(arba_cvc(0x0000000000000000)))), :(bvxor_cvc(bvnot_cvc(0x0000000000000000), 0x0000000000000001)), :(bvadd_cvc(0x0000000000000000, _arg_1)), :(shesh_cvc(bvnot_cvc(arba_cvc(0x0000000000000000)))), :(bvnot_cvc(ehad_cvc(shesh_cvc(0x0000000000000000)))), :(smol_cvc(bvnot_cvc(shesh_cvc(0x0000000000000001)))), :(smol_cvc(shesh_cvc(smol_cvc(_arg_1)))), :(bvor_cvc(0x0000000000000000, ehad_cvc(0x0000000000000000))), :(bvadd_cvc(0x0000000000000001, bvnot_cvc(_arg_1))), :(im_cvc(0x0000000000000000, _arg_1, _arg_1)), :(smol_cvc(ehad_cvc(bvnot_cvc(0x0000000000000001)))), :(shesh_cvc(arba_cvc(ehad_cvc(0x0000000000000000)))), :(bvxor_cvc(_arg_1, smol_cvc(0x0000000000000001))), :(smol_cvc(bvand_cvc(_arg_1, 0x0000000000000001))), :(arba_cvc(shesh_cvc(smol_cvc(0x0000000000000000)))), :(bvor_cvc(0x0000000000000000, _arg_1)), :(bvadd_cvc(0x0000000000000000, bvnot_cvc(0x0000000000000000))), :(smol_cvc(shesh_cvc(bvnot_cvc(0x0000000000000001)))), :(im_cvc(0x0000000000000000, 0x0000000000000001, _arg_1)), :(bvadd_cvc(bvnot_cvc(0x0000000000000000), 0x0000000000000000)), :(bvxor_cvc(_arg_1, arba_cvc(0x0000000000000000))), :(bvor_cvc(0x0000000000000001, 0x0000000000000000)), :(im_cvc(0x0000000000000000, 0x0000000000000000, 0x0000000000000001)), :(ehad_cvc(shesh_cvc(0x0000000000000000))), :(ehad_cvc(shesh_cvc(arba_cvc(0x0000000000000000)))), :(bvand_cvc(smol_cvc(0x0000000000000001), _arg_1)), :(bvxor_cvc(ehad_cvc(0x0000000000000000), 0x0000000000000001)), :(bvand_cvc(_arg_1, smol_cvc(0x0000000000000001))), :(arba_cvc(bvnot_cvc(smol_cvc(_arg_1)))), :(bvnot_cvc(ehad_cvc(ehad_cvc(_arg_1)))), :(bvxor_cvc(0x0000000000000000, shesh_cvc(0x0000000000000001))), :(ehad_cvc(bvnot_cvc(arba_cvc(_arg_1)))), :(ehad_cvc(arba_cvc(arba_cvc(_arg_1)))), :(bvand_cvc(_arg_1, bvnot_cvc(_arg_1))), :(bvor_cvc(0x0000000000000001, _arg_1)), :(arba_cvc(bvnot_cvc(0x0000000000000001))), :(shesh_cvc(bvor_cvc(0x0000000000000000, 0x0000000000000000))), :(bvxor_cvc(0x0000000000000001, ehad_cvc(0x0000000000000000))), :(shesh_cvc(bvor_cvc(_arg_1, 0x0000000000000001))), :(smol_cvc(bvadd_cvc(0x0000000000000000, 0x0000000000000000))), :(bvxor_cvc(arba_cvc(0x0000000000000000), 0x0000000000000000)), :(arba_cvc(bvadd_cvc(0x0000000000000001, 0x0000000000000001))), :(arba_cvc(bvnot_cvc(bvnot_cvc(_arg_1)))), :(shesh_cvc(bvnot_cvc(arba_cvc(_arg_1)))), :(bvxor_cvc(smol_cvc(_arg_1), _arg_1)), :(im_cvc(_arg_1, _arg_1, 0x0000000000000000)), :(im_cvc(0x0000000000000001, 0x0000000000000000, 0x0000000000000001)), :(shesh_cvc(bvand_cvc(0x0000000000000000, _arg_1))), :(bvor_cvc(bvnot_cvc(_arg_1), _arg_1)), :(bvadd_cvc(0x0000000000000000, ehad_cvc(0x0000000000000001))), :(arba_cvc(bvnot_cvc(ehad_cvc(0x0000000000000000)))), :(bvnot_cvc(arba_cvc(0x0000000000000000))), :(bvor_cvc(bvnot_cvc(0x0000000000000000), 0x0000000000000001)), :(shesh_cvc(shesh_cvc(0x0000000000000000))), :(ehad_cvc(bvand_cvc(0x0000000000000001, 0x0000000000000000))), :(arba_cvc(arba_cvc(smol_cvc(0x0000000000000001)))), :(bvor_cvc(smol_cvc(0x0000000000000000), 0x0000000000000001)), :(bvnot_cvc(bvxor_cvc(0x0000000000000000, 0x0000000000000000))), :(bvnot_cvc(ehad_cvc(smol_cvc(0x0000000000000000)))), :(bvand_cvc(0x0000000000000000, 0x0000000000000001)), :(bvxor_cvc(0x0000000000000000, ehad_cvc(0x0000000000000001))), :(smol_cvc(bvadd_cvc(_arg_1, 0x0000000000000000)))]), Dict{Any, Any}(5 => Any[:(bvnot_cvc(ehad_cvc(_arg_1)))], 4 => Any[:(smol_cvc(bvor_cvc(_arg_1, smol_cvc(_arg_1))))], 6 => Any[:(smol_cvc(bvor_cvc(_arg_1, smol_cvc(_arg_1))))], 7 => Any[:(bvnot_cvc(ehad_cvc(_arg_1)))], 2 => Any[:(smol_cvc(bvor_cvc(_arg_1, smol_cvc(_arg_1))))], 10 => Any[:(bvnot_cvc(ehad_cvc(_arg_1)))], 9 => Any[:(smol_cvc(bvor_cvc(_arg_1, smol_cvc(_arg_1))))], 8 => Any[:(bvnot_cvc(ehad_cvc(_arg_1)))], 3 => Any[:(smol_cvc(bvor_cvc(_arg_1, smol_cvc(_arg_1))))], 1 => Any[:(bvnot_cvc(ehad_cvc(_arg_1)))]))
     
+    ungrouped_termset, solutions_per_example = create_termset(examples, grammar, grammar_root, variables, AllTypes, constraints, constraints_dumb, with_solutions, num_solutions, up_to_size)
+    #ungrouped_termset = Set(Union{Bool, Int64, Expr, String, Symbol}[:_arg_1])
     
-    #create_termset(examples, grammar, grammar_root, variables, AllTypes, num_solutions, up_to_size)
-    
-    println(solutions_per_example)
-    #TODO TEMPORARY; to get beyond creating termset in debugger
-    # ungrouped_termset = Set(Union{Int64, Expr, Symbol}[:(3 + 0), :(2 + 3), :(x * 1), :(1 + 2), 0, :(3 * 2), :(0 * 0), :(1 * 1), :(x * 3), :(2 + 2), :x, :(0 + 1), :(2 * 1), :(x + 1), :(1 * 3), :(1 + 0), :(1 * x), :(3 * 0), :(0 + 3), :(1 + x), :(x * 2), :(2 * 3), :(x + 3), :(2 + 0), :(2 + x), :(3 + 1), :(1 * 2), :(x * x), :(0 + 2), :(3 + 3), 1, :(2 * 2), :(x * 0), :(x + 2), :(x + x), :(0 * 1), 3, :(1 * 0), :(3 + 2), :(0 * 3), :(0 + x), :(0 * x), :(0 + 0), :(1 + 1), :(2 * 0), :(x + 0), :(3 * 1), :(2 * x), :(3 + x), 2, :(2 + 1), :(1 + 3), :(0 * 2), :(3 * 3), :(3 * x)])
-    # solutions_per_example = Dict{Any, Any}(0 => Any[:(x + 1)], 1 => Any[:(3 * x)])
-
     grouped_termset,counts = group_by_operator_count(ungrouped_termset)
+    
+    iokaas = open("kaas.txt", "w")  
+    println(iokaas, ungrouped_termset)
+    close(iokaas)
 
-    println("termset created\n")
+    # counts = [0,1]
+#     grouped_termset = Dict{Int64, Vector{Union{Bool, Int64, Expr, String, Symbol}}}(0 => [:_arg_1, "smith,bobby", " ", false, ",", -1, "bobby,smith", "aaron,lennox", "lennox,aaron", true, "chang,amy", "amy,chang", ""], 1 => [:(replace_cvc(_arg_1, _arg_1, ",")), :(if true
+#     ""
+# else
+#     ","
+# end), :(int_to_str_cvc(0)), :(if true
+#     0
+# else
+#     -1
+# end), :(concat_cvc(_arg_1, _arg_1)), :(int_to_str_cvc(-1)), :(if false
+#     0
+# else
+#     1
+# end), :(suffixof_cvc(_arg_1, _arg_1)), :(concat_cvc("", ",")), :(concat_cvc(",", " ")), :(if false
+#     1
+# else
+#     0
+# end), :(suffixof_cvc(" ", _arg_1)), :(if false
+#     1
+# else
+#     -1
+# end), :(prefixof_cvc(_arg_1, _arg_1)), :(concat_cvc(",", "")), :(at_cvc(",", 1)), :(replace_cvc(_arg_1, "", ",")), :(substr_cvc(_arg_1, 1, 0)), :(if true
+#     _arg_1
+# else
+#     ","
+# end), :(concat_cvc("", "")), :(concat_cvc(",", _arg_1)), :(substr_cvc(_arg_1, 1, -1)), :(replace_cvc(_arg_1, "", "")), :(if true
+#     -1
+# else
+#     1
+# end), :(prefixof_cvc("", _arg_1)), :(if false
+#     ""
+# else
+#     ""
+# end), :(if true
+#     0
+# else
+#     1
+# end), :(replace_cvc(_arg_1, " ", "")), :(-1 == 0), :(if false
+#     _arg_1
+# else
+#     ""
+# end), :(-1 == -1), :(indexof_cvc(_arg_1, ",", 0)), :(if true
+#     " "
+# else
+#     " "
+# end), :(concat_cvc("", " ")), :(if true
+#     1
+# else
+#     0
+# end), :(if true
+#     1
+# else
+#     -1
+# end), :(indexof_cvc(_arg_1, ",", -1)), :(int_to_str_cvc(1)), :(if true
+#     ","
+# else
+#     " "
+# end), :(0 == -1), :(0 == 0), :(concat_cvc(_arg_1, "")), :(if false
+#     1
+# else
+#     1
+# end), :(at_cvc(" ", 1)), :(-1 - 0), :(replace_cvc(_arg_1, " ", _arg_1)), :(if false
+#     ","
+# else
+#     ""
+# end), :(-1 - -1), :(concat_cvc(_arg_1, " ")), :(-1 + 0), :(replace_cvc(_arg_1, _arg_1, _arg_1)), :(if false
+#     ","
+# else
+#     ","
+# end), :(-1 + -1), :(if true
+#     ""
+# else
+#     _arg_1
+# end), :(indexof_cvc(_arg_1, " ", 0)), :(0 - 0), :(if false
+#     " "
+# else
+#     _arg_1
+# end), :(indexof_cvc(_arg_1, " ", -1)), :(if false
+#     " "
+# else
+#     ""
+# end), :(0 - -1), :(replace_cvc(_arg_1, _arg_1, "")), :(substr_cvc(_arg_1, 1, 1)), :(prefixof_cvc(" ", _arg_1)), :(0 + 0), :(0 + -1), :(replace_cvc(_arg_1, " ", " ")), :(if true
+#     " "
+# else
+#     ","
+# end), :(-1 == 1), :(if true
+#     _arg_1
+# else
+#     " "
+# end), :(if false
+#     " "
+# else
+#     ","
+# end), :(if true
+#     1
+# else
+#     1
+# end), :(indexof_cvc(_arg_1, ",", 1)), :(if false
+#     ","
+# else
+#     _arg_1
+# end), :(0 == 1), :(indexof_cvc(_arg_1, _arg_1, 0)), :(indexof_cvc(_arg_1, _arg_1, -1)), :(1 == 0), :(concat_cvc(",", ",")), :(1 == -1), :(if false
+#     _arg_1
+# else
+#     " "
+# end), :(if false
+#     ""
+# else
+#     ","
+# end), :(-1 - 1), :(replace_cvc(_arg_1, ",", " ")), :(-1 + 1), :(indexof_cvc(_arg_1, " ", 1)), :(0 - 1), :(if true
+#     _arg_1
+# else
+#     ""
+# end), :(0 + 1), :(suffixof_cvc(",", _arg_1)), :(concat_cvc(" ", ",")), :(1 - 0), :(if true
+#     ","
+# else
+#     _arg_1
+# end), :(if true
+#     " "
+# else
+#     ""
+# end), :(1 + 0), :(1 - -1), :(if false
+#     " "
+# else
+#     " "
+# end), :(1 + -1), :(if true
+#     _arg_1
+# else
+#     _arg_1
+# end), :(concat_cvc(_arg_1, ",")), :(len_cvc(_arg_1)), :(if true
+#     ""
+# else
+#     ""
+# end), :(if false
+#     ","
+# else
+#     " "
+# end), :(if true
+#     ""
+# else
+#     " "
+# end), :(indexof_cvc(_arg_1, _arg_1, 1)), :(if false
+#     -1
+# else
+#     0
+# end), :(if false
+#     -1
+# else
+#     -1
+# end), :(suffixof_cvc("", _arg_1)), :(if false
+#     _arg_1
+# else
+#     _arg_1
+# end), :(1 == 1), :(concat_cvc(" ", _arg_1)), :(if false
+#     0
+# else
+#     0
+# end), :(if true
+#     ","
+# else
+#     ""
+# end), :(if false
+#     0
+# else
+#     -1
+# end), :(replace_cvc(_arg_1, "", _arg_1)), :(contains_cvc(_arg_1, " ")), :(if false
+#     ""
+# else
+#     " "
+# end), :(contains_cvc(_arg_1, _arg_1)), :(replace_cvc(_arg_1, _arg_1, " ")), :(concat_cvc(" ", " ")), :(if false
+#     ""
+# else
+#     _arg_1
+# end), :(substr_cvc(_arg_1, 0, -1)), :(1 - 1), :(replace_cvc(_arg_1, ",", _arg_1)), :(replace_cvc(_arg_1, ",", "")), :(1 + 1), :(prefixof_cvc(",", _arg_1)), :(if false
+#     _arg_1
+# else
+#     ","
+# end), :(at_cvc(_arg_1, 1)), :(replace_cvc(_arg_1, ",", ",")), :(contains_cvc(_arg_1, "")), :(if true
+#     -1
+# else
+#     0
+# end), :(concat_cvc(" ", "")), :(if true
+#     -1
+# else
+#     -1
+# end), :(replace_cvc(_arg_1, " ", ",")), :(if true
+#     " "
+# else
+#     _arg_1
+# end), :(if true
+#     0
+# else
+#     0
+# end), :(concat_cvc("", _arg_1)), :(contains_cvc(_arg_1, ",")), :(if false
+#     -1
+# else
+#     1
+# end), :(replace_cvc(_arg_1, "", " ")), :(if true
+#     ","
+# else
+#     ","
+# end)])
+
+    #println("termset created\n")
     println("Find rules")
+
+    starttime = time()
 
     Ruler.interpret_function = interpret_function
     all_rules = Dict()
     for (n,example) in enumerate(examples)
         var_to_value = example[1].in
         #i = example[1].in[variable]
+        println(ioruler, "example $n")
     
         println("Find rules for inputs $var_to_value; example $n/$(length(examples))\n")
     
         Ruler.variable_cvec = (var::Symbol) -> [var_to_value[var]]
-        #println(Ruler.variable_cvec())
-        T,R = ruler(counts, grouped_termset, variables, CVec)
-        all_rules[n] = R
         Ruler.cvec_to_classes = Dict()
+        #println(Ruler.variable_cvec())
+        result = ruler(counts, grouped_termset, variables, CVec, starttime, ioruler, deepcopy(R))
+        if result === nothing
+            return (nothing, -1, -1)
+        end
+        T,rules = result
+        all_rules[n] = rules
     
-        println("Found $(length(R)) rules for input $var_to_value")
-        println(R)
+        println("Found $(length(rules)) rules for input $var_to_value")
+        #println(rules)
     end
     println("Rules found")
 
-    all_graphs::Vector{EGraph{Expr,Nothing}} = []
+    return (nothing, 1, 1)
+
+    all_graphs::Vector{EGraph{Expr,CountData}} = []
+    iosolutions = open("solutions.txt", "w")  
+
 
     for (n,example) in enumerate(examples)
         var_to_value = example[1].in
@@ -55,32 +294,26 @@ function solve(examples, grammar, grammar_root, variables, ::Type{AllTypes}, ::T
         println("Find solutions for input $var_to_value; example $n/$(length(examples))\n")
     
         solutions = solutions_per_example[n]
-        G = EGraph{Expr,Nothing}()
+        G = EGraph{Expr,CountData}()
         for term in solutions
             G.root = addexpr!(G, term)
         end
-        @invokelatest saturate!(G,all_rules[n])
+        @invokelatest saturate!(G,all_rules[n],SaturationParams(eclasslimit=20))
         push!(all_graphs, G)
     
         println("Found soltutions for input $var_to_value")
+        println(iosolutions, G)
     
     end
 
-    println("Solutions found")
+    close(iosolutions) 
+    
 
-    #TODO it finally terminates, but it doesnt find it even though 2x+1 is represented by both
-    #to find 2x+1:
-        #1: intersect(2,1) intersects %1+%2 with %11+%2
-            #2: intersect(1,11) intersects %13*%1 with %11*%2
-                    #the moment you intersect 1 and 11 it has already done so and found nothing
-                    #probably because of the order
-                #3: intersect(13,11) finds 2
-                #4: intersect(1,2) finds x
-            #so we find 2*x
-            #5: intersect(2,2) finds 1
-        #so we find 2x+1
+    println("Solutions found")
 
     println("Intersect solutions")
 
-    return intersect(AllTypes, all_graphs)
+    count = [0]
+    result = intersect(AllTypes, count, all_graphs)
+    return (result, count[1], sum(g -> sum(c -> c.second.data.total, g.classes), all_graphs))
 end

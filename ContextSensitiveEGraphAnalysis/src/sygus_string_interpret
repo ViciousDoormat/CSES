@@ -55,6 +55,8 @@ function interpret_sygus(prog::AbstractRuleNode, grammar_tags::Dict{Int,Any}, st
         end
 end
 
+
+
 function interpret_sygus(expr, state=nothing)
     if typeof(expr) != Expr 
         return typeof(expr) == Symbol && state !== nothing && haskey(state,expr) ? state[expr] : expr
@@ -65,11 +67,11 @@ function interpret_sygus(expr, state=nothing)
 
     if head != :call
         if head == :if
-            return interpret_sygus(c[1], state) ? interpret_sygus(c[2], state) : interpret_sygus(c[3], state)
+            return Bool(interpret_sygus(c[1], state)) ? interpret_sygus(c[2], state) : interpret_sygus(c[3], state)
         end
         error(huilen2)
     end
-
+    try
     MLStyle.@match c[1] begin
             :concat_cvc     => concat_cvc(interpret_sygus(c[2], state), interpret_sygus(c[3], state))
             :replace_cvc    => replace_cvc(interpret_sygus(c[2], state), interpret_sygus(c[3], state), interpret_sygus(c[4], state))
@@ -89,4 +91,9 @@ function interpret_sygus(expr, state=nothing)
 
             _               => error("huilen")
     end
+    catch
+        return :error
+    end
 end
+
+interpret_sygus(:($(Bool(0)) ? 1 : 2))
