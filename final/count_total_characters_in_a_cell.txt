@@ -1,0 +1,1 @@
+count_total_characters_in_a_cell with n=2: iterations -1, estimate -1, solution found: nothing, time 1339.7730000019073, rulertime 1.757037639522e9

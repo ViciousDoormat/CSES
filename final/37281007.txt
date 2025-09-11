@@ -1,0 +1,1 @@
+37281007 with n=2: iterations -1, estimate -1, solution found: nothing, time 5762.253000020981, rulertime 1.757053061834e9

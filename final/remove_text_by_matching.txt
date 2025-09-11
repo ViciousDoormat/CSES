@@ -1,0 +1,1 @@
+remove_text_by_matching with n=2: iterations -1, estimate -1, solution found: nothing, time 1676.625, rulertime 1.757035964592e9

@@ -1,0 +1,11 @@
+
+remove_file_extension_from_filename with n=2
+example 1
+iteration 0
+1 candidates
+0.0 choose_eqs
+iteration 1
+458 candidates
+346.25499987602234 choose_eqs
+iteration 2
+13211 candidates

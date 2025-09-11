@@ -1,0 +1,1 @@
+replace_one_character_with_another with n=2: iterations -1, estimate -1, solution found: nothing, time 1482.944000005722, rulertime 1.757034481771e9

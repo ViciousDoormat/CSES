@@ -23,7 +23,7 @@ using Metatheory.EGraphs
 
 const N = 1 # The number of outputs in a cvec
 
-optimizations::Vector{Bool}=[true,false]
+use_new_select = false
 
 """
 The values of the target domain used for the cvecs of variables.
@@ -45,7 +45,7 @@ function equal_cvecs(a::Vector{CVec}, b::Vector{CVec})::Bool where {CVec}
         if a === nothing || b === nothing
             continue
         end
-        if a[i] != b[i] # TODO maybe !== (to counter 0 == false)
+        if a[i] !== b[i] # TODO I changed this to ==
             all_equal = false
             break
         else
@@ -71,10 +71,10 @@ function EGraphs.make(g::EGraph{Expr, Vector{CVec}}, n::VecExpr)::Vector{CVec} w
     if !v_isexpr(n)
         if typeof(op) == Symbol
             # When op is a variable, return N values from the target domain as defined by variable_cvec
-            cvec = variable_cvec(op)
+            cvec = variable_cvec(interpret_function(op))
         else
             # When op is a constant, return N copies
-            cvec = fill(op, N)
+            cvec = fill(interpret_function(op), N)
         end
     else
         # When op is a function call op(c1, c2, ..., cn), return map(op, zip(v1, v2, ..., vn))
@@ -88,14 +88,15 @@ function EGraphs.make(g::EGraph{Expr, Vector{CVec}}, n::VecExpr)::Vector{CVec} w
         # Call op, that represents n, in all those ways to get the cvec
         if v_iscall(n)
             # If n is represented as an explicit function call in Julia
-            #println(map(params -> maketerm(Expr, :call, [op, params...], nothing), parameter_possibilities))
+            
             cvec = map(params -> interpret_function(maketerm(Expr, :call, [op, params...], nothing)), parameter_possibilities)
         else
             # If n is not represented as a function call; example is &&
-            #println(map(params -> maketerm(Expr, op, params, nothing), parameter_possibilities))
+            
             cvec = map(params -> interpret_function(maketerm(Expr, op, params, nothing)), parameter_possibilities)
         end
     end
+    
     
     haskey(cvec_to_classes,cvec) || (cvec_to_classes[cvec] = Set())
     push!(cvec_to_classes[cvec],Metatheory.EGraphs.IdKey(g.memo[n]))
@@ -113,8 +114,10 @@ Join the cvecs of two merging eclasses.
 # TODO should the nothing or non-nothing values be chosen
 function EGraphs.join(a::Vector{CVec}, b::Vector{CVec})::Vector{CVec} where {CVec}
     if a == [:skip] || a == [:error]
+        #println(a,b)
         return b
     elseif b == [:skip] || b == [:error]
+        #println(b,b)
         return a
     end
     equal_cvecs(a,b) || error("Cannot join different cvecs $a and $b")
@@ -232,10 +235,14 @@ end
 """
 Saturate T based on R without polluting T with intermediate terms added during equality saturation.
 """
-function run_rewrites!(T::EGraph{Expr, Vector{CVec}}, R::Vector{RewriteRule}) where {CVec}
+function run_rewrites!(T, R::Vector{RewriteRule}#=, update::Bool=#) where {CVec}
+    # We need to actively tell our system that we do not add new terms currently. 
+    # 1) saturating with general rules can create erroneous terms with incorrect cvecs, breaking the system
+    # 2) we need to not update cvecs_to_classes with terms created by saturating, because those are removed again
+    global adding_terms = false
+
     # To ensure that run_rewrites only shrinks the term e-graph, Ruler performs this equality
     # saturation on a copy of the e-graph
-    global adding_terms = false
     g = deepcopy(T)
     #println("saturate g")
     @invokelatest saturate!(g, R)
@@ -243,15 +250,8 @@ function run_rewrites!(T::EGraph{Expr, Vector{CVec}}, R::Vector{RewriteRule}) wh
 
     # It then copies the newly learned equalities (e-class merges) back to the original e-graph. 
     # This avoids polluting the e-graph with terms added during equality saturation.
-    
-    # for initial in keys(T.classes) 
-    #     initial = initial.val
-    #     final = find(g, g.uf.parents[Int(initial)])
-    #     if initial != final 
-    #         Metatheory.EGraphs.union!(T, UInt(initial), UInt(final))
-    #     end
-    # end
 
+    #first, for every original term, find out where it ended up in g
     destination_to_contained = Dict{Id, Vector{Id}}()
     for initial in keys(T.classes) 
         initial = initial.val
@@ -262,6 +262,7 @@ function run_rewrites!(T::EGraph{Expr, Vector{CVec}}, R::Vector{RewriteRule}) wh
         push!(destination_to_contained[UInt(final)], UInt(initial))
     end
 
+    #then, for the terms from T that ended up together in g, join them in T
     for together in values(destination_to_contained)
         if length(together) > 1
             # If there are multiple eclasses that end up in the same eclass, merge them
@@ -269,6 +270,11 @@ function run_rewrites!(T::EGraph{Expr, Vector{CVec}}, R::Vector{RewriteRule}) wh
             for join in together[2:end]
                 Metatheory.EGraphs.union!(T, main, join)
             end
+            # if update
+            #     # Update cvec_to_classes by removing terms that are now already in the same eclass
+            #     cvec = T.classes[Metatheory.EGraphs.IdKey(main)].data
+            #     setdiff!(cvec_to_classes[cvec], together[2:end])
+            # end
         end
     end
     
@@ -282,7 +288,8 @@ Remove rules from C that can be proven by the rules in R
 If the left and right part of a rewrite rule in C end up in the same eclass after saturation by R
 """
 function shrink(R::Vector{RewriteRule}, C::Vector{RewriteRule}, variables, ::Type{CVec}, io) where {CVec}
-    E = EGraph{Expr, Vector{CVec}}() 
+    #global adding_terms = false  
+    E = EGraph{Expr, Nothing}() 
     classes_per_rule = []
     for r in C
         # For each rule, add the terms that form it to E
@@ -294,17 +301,15 @@ function shrink(R::Vector{RewriteRule}, C::Vector{RewriteRule}, variables, ::Typ
     println("run rewrites")
     
     
-    start = time()
-    if optimizations[2] # optimization three  
-        global adding_terms = false    
-        @invokelatest saturate!(E, R)
-        global adding_terms = true
-    else
-        run_rewrites!(E, R)
-    end 
-    total = time() - start #TODO write to file
+    #start = time()
+    #if optimizations[2] # optimization three           
+        #@invokelatest saturate!(E, R)   
+    #else
+        run_rewrites!(E, R#=, false=#)
+    #end 
+    #total = time() - start #TODO write to file
     
-    println(io, "$total shrink")
+    #println(io, "$total shrink")
 
     println("run rewrites done")
 
@@ -321,6 +326,7 @@ function shrink(R::Vector{RewriteRule}, C::Vector{RewriteRule}, variables, ::Typ
         end
     end
 
+    #global adding_terms = true
     return result
 end
 
@@ -395,16 +401,17 @@ function choose_eqs(R::Vector{RewriteRule}, C::Vector{RewriteRule}, variables, :
     #do this until C < 201
     # then the 100 approach
     start_time = time()
-    if optimizations[1] #optimization two
-        old_length = length(C) 
-        while length(C) < old_length && length(C) > 200
+    if use_new_select
+        #old_length = length(C)+1
+        while length(C) > 200
             println("length of C: ", length(C))
             old_length = length(C)
-            step = n ÷ 2 #maybe 3?
+            step = old_length ÷ 2 #maybe 3?
             C = choose_eqs_n(R::Vector{RewriteRule}, C::Vector{RewriteRule}, n, step, variables, CVec, starttime, io)
             if C === nothing
                 return nothing
             end
+            length(C) < old_length || break
         end
     end
     
@@ -440,9 +447,11 @@ function ruler(counts::Vector{Int}, D::Dict{Int, Vector{AllTypes}}, variables::V
         
         println("Added terms to T, run cvec_match")
 
-        
-        run_rewrites!(T, R)
-        
+        #true to update cvec_to_classes after potential mergers
+        run_rewrites!(T, R#=, true=#)
+        println("Run rewrites done")
+        #println(cvec_to_classes)
+
         # Update cvec_to_classes after mergers
         for (key,values) in cvec_to_classes
             values_new = Set()
@@ -457,6 +466,10 @@ function ruler(counts::Vector{Int}, D::Dict{Int, Vector{AllTypes}}, variables::V
         #TODO write length(C) to file
 
         println("Found $(length(C)) candidate rules, select rules")
+        #println(T)
+        #println(cvec_to_classes)
+        #println(R)
+        #println(C)
 
         # Select the best rules from the candidate set
         while !isempty(C)
@@ -468,13 +481,13 @@ function ruler(counts::Vector{Int}, D::Dict{Int, Vector{AllTypes}}, variables::V
             union!(R, K)
             println("Found $(length(R)) rules, run them on T")
 
-            # Update T with R, guarantees the selected rules will not be considered again
-            run_rewrites!(T, R)
+            # Update T with R, guarantees the selected rules will not be considered again. false because we can prove everything anyway
+            run_rewrites!(T, R#=, false=#)
             println("Run cvec_match again")
 
-            # Update cvec_to_classes
+            # Update cvec_to_classes; everything is proven
             for key in keys(cvec_to_classes)
-                cvec_to_classes[key] = [Metatheory.EGraphs.IdKey(find(T, first(cvec_to_classes[key]).val))]
+                cvec_to_classes[key] = Set([Metatheory.EGraphs.IdKey(find(T, first(cvec_to_classes[key]).val))])
             end
 
             # Update C

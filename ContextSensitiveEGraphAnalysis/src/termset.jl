@@ -72,8 +72,13 @@ function generate_small_terms(grammar, up_to_size, grammar_root, examples)
     small_terms = Set()
     symboltable :: SymbolTable = SymbolTable(grammar, Main)
 
+    #currentconstraints = Set(grammar.constraints)
+
     for type in unique(grammar.types)
-        for candidate_program ∈ BFSIterator(grammar, type, max_size=(up_to_size+3))
+        iter = BFSIterator(grammar, type, max_size=(up_to_size+3)) #TODO changed this to 2
+        solver::Solver = iter.solver::Solver
+        #println(solver)
+        for candidate_program ∈ iter
             expr = rulenode2expr(candidate_program, grammar) 
 
             try
@@ -82,6 +87,10 @@ function generate_small_terms(grammar, up_to_size, grammar_root, examples)
                 end
                 push!(small_terms, expr)
             catch
+                # c::AbstractConstraint = Forbidden(candidate_program)::AbstractConstraint
+                # if (c ∉ grammar.constraints)
+                #     addconstraint!(grammar, c)
+                # end
             end
 
             #count_operators(expr) <= up_to_size  || break TODO it iterates incorectly for this; in order of size; size(--x) == size(x+1)

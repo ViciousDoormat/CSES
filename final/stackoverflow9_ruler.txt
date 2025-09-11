@@ -1,0 +1,11 @@
+
+stackoverflow9 with n=2
+example 1
+iteration 0
+1 candidates
+0.0 choose_eqs
+iteration 1
+275 candidates
+130.64299988746643 choose_eqs
+iteration 2
+5415 candidates

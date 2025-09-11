@@ -1,0 +1,1 @@
+convert_numbers_to_text with n=1: iterations 2, estimate -2563258833478635987, solution found: int_to_str_cvc(_arg_1), time 706.8759999275208, rulertime 693.045000076294

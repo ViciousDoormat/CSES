@@ -1,0 +1,11 @@
+
+get_last_name_from_name_with_comma with n=2
+example 1
+iteration 0
+1 candidates
+0.0 choose_eqs
+iteration 1
+469 candidates
+522.4639999866486 choose_eqs
+iteration 2
+16187 candidates

@@ -1,0 +1,11 @@
+
+remove_characters_from_left with n=2
+example 1
+iteration 0
+2 candidates
+0.0 choose_eqs
+iteration 1
+317 candidates
+178.7079999446869 choose_eqs
+iteration 2
+4227 candidates

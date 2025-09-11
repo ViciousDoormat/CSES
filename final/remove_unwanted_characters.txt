@@ -1,0 +1,1 @@
+remove_unwanted_characters with n=2: iterations -1, estimate -1, solution found: nothing, time 3490.204999923706, rulertime 1.75704236833e9

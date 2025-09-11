@@ -1,24 +1,32 @@
-Set(Union{Bool, Int64, Expr, String, Symbol}[:(int_to_str_cvc(0)), :_arg_1, "101", :(int_to_str_cvc(-1)), :(if false
+Dict{Int64, Vector{Union{Bool, Int64, Expr, String, Symbol}}}(0 => [:_arg_1, "TL-288762", " ", "CT-576", false, -1, "|", "TL-18273982", true, "TL-288762| 76DK", "TL-18273982| 10MM", "N/A", ""], 1 => [:(if false
+      " "
+  else
+      "|"
+  end), :(if true
+      "|"
+  else
+      ""
+  end), :(int_to_str_cvc(0)), :(concat_cvc(_arg_1, _arg_1)), :(int_to_str_cvc(-1)), :(replace_cvc(_arg_1, "|", "|")), :(if false
       0
   else
+      1
+  end), :(if true
       _arg_1
-  end), :(if false
-      0
   else
-      1
-  end), :(if false
+      "|"
+  end), :(replace_cvc(_arg_1, _arg_1, "|")), :(suffixof_cvc(_arg_1, _arg_1)), :(if false
       1
   else
       0
-  end), :(_arg_1 == _arg_1), :(if false
+  end), :(suffixof_cvc(" ", _arg_1)), :(if false
       1
   else
       -1
-  end), :(1 - _arg_1), :(1 == _arg_1), :(concat_cvc("", "")), :(if true
+  end), :(concat_cvc(_arg_1, "|")), :(prefixof_cvc("|", _arg_1)), :(prefixof_cvc(_arg_1, _arg_1)), :(substr_cvc(_arg_1, 1, 0)), :(concat_cvc("", "")), :(replace_cvc(_arg_1, "", "")), :(substr_cvc(_arg_1, 1, -1)), :(if true
       -1
   else
       1
-  end), :(0 - _arg_1), :(_arg_1 == 1), :(if false
+  end), :(prefixof_cvc("", _arg_1)), :(if false
       ""
   else
       ""
@@ -26,7 +34,11 @@ Set(Union{Bool, Int64, Expr, String, Symbol}[:(int_to_str_cvc(0)), :_arg_1, "101
       0
   else
       1
-  end), :(-1 == 0), :(-1 == -1), "743", :(if true
+  end), :(replace_cvc(_arg_1, " ", "")), :(-1 == 0), :(if false
+      _arg_1
+  else
+      ""
+  end), :(-1 == -1), :(if true
       1
   else
       0
@@ -38,71 +50,67 @@ Set(Union{Bool, Int64, Expr, String, Symbol}[:(int_to_str_cvc(0)), :_arg_1, "101
       1
   else
       -1
-  end), :(0 == 0), " ", :(0 == -1), :(if false
-      _arg_1
+  end), :(0 == 0), :(concat_cvc(_arg_1, "")), :(0 == -1), :(if false
+      "|"
   else
-      0
-  end), :(if true
-      0
-  else
-      _arg_1
-  end), :(if true
-      _arg_1
-  else
-      0
-  end), :(if false
-      _arg_1
-  else
-      -1
-  end), :(if true
-      _arg_1
-  else
-      -1
-  end), :(if false
+      " "
+  end), :(concat_cvc("|", "|")), :(if false
       1
   else
       1
-  end), :(at_cvc(" ", 1)), :(-1 - 0), :(-1 - -1), :(-1 + 0), :(-1 + -1), :(0 - 0), :(if true
-      1
+  end), :(at_cvc(" ", 1)), :(-1 - 0), :(replace_cvc(_arg_1, " ", _arg_1)), :(if true
+      "|"
+  else
+      "|"
+  end), :(-1 - -1), :(concat_cvc(_arg_1, " ")), :(-1 + 0), :(replace_cvc(_arg_1, _arg_1, _arg_1)), :(if false
+      " "
   else
       _arg_1
-  end), :(if false
+  end), :(-1 + -1), :(if true
+      ""
+  else
+      _arg_1
+  end), :(indexof_cvc(_arg_1, " ", 0)), :(0 - 0), :(concat_cvc(" ", "|")), :(indexof_cvc(_arg_1, " ", -1)), :(if false
       " "
   else
       ""
-  end), 1002, :(1 + _arg_1), :(0 - -1), :(-1 + _arg_1), :(0 + -1), :(0 + _arg_1), :(0 + 0), :(-1 == _arg_1), :(_arg_1 - _arg_1), :(-1 == 1), 743, :(if true
-      1
-  else
-      1
-  end), :(0 == 1), :(if false
+  end), :(0 - -1), :(replace_cvc(_arg_1, _arg_1, "")), :(substr_cvc(_arg_1, 1, 1)), :(prefixof_cvc(" ", _arg_1)), :(replace_cvc(_arg_1, " ", "|")), :(0 + -1), :(0 + 0), :(concat_cvc("|", " ")), :(indexof_cvc(_arg_1, "|", 0)), :(indexof_cvc(_arg_1, "|", -1)), :(replace_cvc(_arg_1, " ", " ")), :(replace_cvc(_arg_1, "|", " ")), :(-1 == 1), :(if true
       _arg_1
   else
+      " "
+  end), :(if true
       1
-  end), :(1 == 0), :(if true
-      _arg_1
   else
       1
-  end), :(1 == -1), :(_arg_1 - 0), false, :(-1 - 1), :(_arg_1 - -1), -1, :(if true
-      -1
-  else
+  end), :(suffixof_cvc("|", _arg_1)), :(0 == 1), :(indexof_cvc(_arg_1, _arg_1, 0)), :(indexof_cvc(_arg_1, _arg_1, -1)), :(1 == 0), :(1 == -1), :(concat_cvc("", "|")), :(if false
       _arg_1
-  end), :(_arg_1 + _arg_1), :(-1 + 1), :(_arg_1 + 0), :(0 - 1), :(_arg_1 + -1), :(0 + 1), :(1 - 0), :(if true
+  else
+      " "
+  end), :(-1 - 1), :(-1 + 1), :(at_cvc("|", 1)), :(indexof_cvc(_arg_1, " ", 1)), :(0 - 1), :(if true
+      _arg_1
+  else
+      ""
+  end), :(0 + 1), :(1 - 0), :(replace_cvc(_arg_1, "", "|")), :(indexof_cvc(_arg_1, "|", 1)), :(1 + 0), :(replace_cvc(_arg_1, "|", "")), :(if true
       " "
   else
       ""
-  end), :(1 + 0), :(1 - -1), :(if false
-      " "
-  else
-      " "
-  end), :(1 + -1), :(if true
+  end), :(1 - -1), :(1 + -1), :(replace_cvc(_arg_1, "|", _arg_1)), :(if true
       _arg_1
-  else
-      _arg_1
-  end), :(if false
-      -1
   else
       _arg_1
   end), :(if true
+      " "
+  else
+      "|"
+  end), :(if true
+      "|"
+  else
+      _arg_1
+  end), :(if false
+      " "
+  else
+      " "
+  end), :(len_cvc(_arg_1)), :(if true
       ""
   else
       ""
@@ -110,7 +118,7 @@ Set(Union{Bool, Int64, Expr, String, Symbol}[:(int_to_str_cvc(0)), :_arg_1, "101
       ""
   else
       " "
-  end), 101, :(if false
+  end), :(indexof_cvc(_arg_1, _arg_1, 1)), :(if false
       -1
   else
       0
@@ -118,43 +126,75 @@ Set(Union{Bool, Int64, Expr, String, Symbol}[:(int_to_str_cvc(0)), :_arg_1, "101
       -1
   else
       -1
-  end), :(if false
+  end), :(suffixof_cvc("", _arg_1)), :(if false
       _arg_1
   else
       _arg_1
-  end), :(1 == 1), :(if false
+  end), :(1 == 1), :(concat_cvc(" ", _arg_1)), :(if false
       0
   else
       0
-  end), :(_arg_1 - 1), true, :(if false
+  end), :(concat_cvc("|", "")), :(if false
       0
   else
       -1
-  end), :(0 == _arg_1), :(if false
+  end), :(if true
+      ""
+  else
+      "|"
+  end), :(replace_cvc(_arg_1, "", _arg_1)), :(if false
+      _arg_1
+  else
+      "|"
+  end), :(if true
+      "|"
+  else
+      " "
+  end), :(if false
+      "|"
+  else
+      ""
+  end), :(if false
       ""
   else
       " "
-  end), :(_arg_1 + 1), :(concat_cvc(" ", " ")), :(int_to_str_cvc(_arg_1)), :(1 - 1), :(1 + 1), :(if true
-      -1
-  else
-      0
-  end), :(-1 - _arg_1), :(_arg_1 == 0), :(concat_cvc(" ", "")), :(if true
-      -1
-  else
-      -1
   end), :(if false
-      1
+      "|"
   else
       _arg_1
-  end), :(_arg_1 == -1), :(if true
+  end), :(contains_cvc(_arg_1, _arg_1)), :(replace_cvc(_arg_1, _arg_1, " ")), :(concat_cvc(" ", " ")), :(if false
+      ""
+  else
+      _arg_1
+  end), :(substr_cvc(_arg_1, 0, -1)), :(1 - 1), :(if false
+      "|"
+  else
+      "|"
+  end), :(1 + 1), :(at_cvc(_arg_1, 1)), :(concat_cvc("|", _arg_1)), :(if true
+      -1
+  else
+      0
+  end), :(concat_cvc(" ", "")), :(if true
+      -1
+  else
+      -1
+  end), :(if true
+      " "
+  else
+      _arg_1
+  end), :(if false
+      ""
+  else
+      "|"
+  end), :(if true
       0
   else
       0
-  end), "1002", "", :(if false
+  end), :(concat_cvc("", _arg_1)), :(if false
       -1
   else
       1
-  end), :(if true
+  end), :(replace_cvc(_arg_1, "", " ")), :(if true
       0
   else
       -1

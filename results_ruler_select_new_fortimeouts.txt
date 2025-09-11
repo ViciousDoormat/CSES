@@ -1,0 +1,23 @@
+convert_numbers_to_text with n=1: iterations 1, estimate 1, solution found: nothing, time 218.7039999961853
+convert_text_to_numbers with n=1: iterations 1, estimate 1, solution found: nothing, time 289.18499994277954
+cell_contains_specific_text with n=1: iterations 1, estimate 1, solution found: nothing, time 919.9060001373291
+replace_one_character_with_another with n=1: iterations 1, estimate 1, solution found: nothing, time 387.8819999694824
+remove_text_by_matching with n=1: iterations 1, estimate 1, solution found: nothing, time 510.34699988365173
+count_total_characters_in_a_cell with n=1: iterations 1, estimate 1, solution found: nothing, time 618.3680000305176
+compare_two_strings with n=1: iterations -1, estimate -1, solution found: nothing, time 1205.0280001163483
+change_negative_numbers_to_positive with n=1: iterations -1, estimate -1, solution found: nothing, time 1209.0280001163483
+remove_unwanted_characters with n=1: iterations -1, estimate -1, solution found: nothing, time 1276.9470000267029
+remove_characters_from_left with n=1: iterations -1, estimate -1, solution found: nothing, time 1310.3670001029968
+join_first_and_last_name with n=1: iterations -1, estimate -1, solution found: nothing, time 1204.7239999771118
+37281007 with n=1: iterations -1, estimate -1, solution found: nothing, time 1203.1879999637604
+19558979 with n=1: iterations -1, estimate -1, solution found: nothing, time 1214.433000087738
+clean_and_reformat_telephone_numbers with n=1: iterations -1, estimate -1, solution found: nothing, time 1232.1299998760223
+44789427 with n=1: iterations -1, estimate -1, solution found: nothing, time 1216.2730000019073
+stackoverflow9 with n=1: iterations 1, estimate 1, solution found: nothing, time 1046.648999929428
+remove_file_extension_from_filename with n=1: iterations -1, estimate -1, solution found: nothing, time 1213.0789999961853
+get_last_name_from_name_with_comma with n=1: iterations -1, estimate -1, solution found: nothing, time 1206.3150000572205
+get_last_name_from_name with n=1: iterations -1, estimate -1, solution found: nothing, time 1211.2699999809265
+12948338 with n=1: iterations -1, estimate -1, solution found: nothing, time 1245.0549998283386
+30732554 with n=1: iterations -1, estimate -1, solution found: nothing, time 1201.654000043869
+
+rerun stackoverflow9 een paar keer

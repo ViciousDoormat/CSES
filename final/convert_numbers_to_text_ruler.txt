@@ -1,0 +1,21 @@
+
+convert_numbers_to_text with n=2
+example 1
+iteration 0
+1 candidates
+0.0 choose_eqs
+iteration 1
+317 candidates
+29.15400004386902 choose_eqs
+iteration 2
+4627 candidates
+786.787999868393 choose_eqs
+example 2
+iteration 0
+1 candidates
+0.0 choose_eqs
+iteration 1
+317 candidates
+34.08699989318848 choose_eqs
+iteration 2
+4623 candidates

@@ -59,6 +59,15 @@ end
 
 function interpret_sygus(expr, state=nothing)
     if typeof(expr) != Expr 
+        # if typeof(expr) == Bool && expr === true
+        #     return :waar
+        # elseif typeof(expr) == Bool && expr === false                                                   
+        #     return :onwaar
+        if expr == 0                                                  
+            return Int(0)
+        elseif expr == 1                                                
+            return Int(1)
+        end
         return typeof(expr) == Symbol && state !== nothing && haskey(state,expr) ? state[expr] : expr
     end
 
@@ -67,7 +76,7 @@ function interpret_sygus(expr, state=nothing)
 
     if head != :call
         if head == :if
-            return Bool(interpret_sygus(c[1], state)) ? interpret_sygus(c[2], state) : interpret_sygus(c[3], state)
+            return interpret_sygus(c[1], state) == :waar ? interpret_sygus(c[2], state) : interpret_sygus(c[3], state)
         end
         error(huilen2)
     end
@@ -81,13 +90,13 @@ function interpret_sygus(expr, state=nothing)
             :len_cvc        => len_cvc(interpret_sygus(c[2], state))
             :str_to_int_cvc => str_to_int_cvc(interpret_sygus(c[2], state))
             :indexof_cvc    => indexof_cvc(interpret_sygus(c[2], state), interpret_sygus(c[3], state), interpret_sygus(c[4], state))
-            :prefixof_cvc   => prefixof_cvc(interpret_sygus(c[2], state), interpret_sygus(c[3], state))
-            :suffixof_cvc   => suffixof_cvc(interpret_sygus(c[2], state), interpret_sygus(c[3], state))
-            :contains_cvc   => contains_cvc(interpret_sygus(c[2], state), interpret_sygus(c[3], state))
+            :prefixof_cvc   => prefixof_cvc(interpret_sygus(c[2], state), interpret_sygus(c[3], state)) ? :waar : :onwaar
+            :suffixof_cvc   => suffixof_cvc(interpret_sygus(c[2], state), interpret_sygus(c[3], state)) ? :waar : :onwaar
+            :contains_cvc   => contains_cvc(interpret_sygus(c[2], state), interpret_sygus(c[3], state)) ? :waar : :onwaar
             
             :+              => interpret_sygus(c[2], state) + interpret_sygus(c[3], state)
             :-              => interpret_sygus(c[2], state) - interpret_sygus(c[3], state)
-            :(==)           => interpret_sygus(c[2], state) == interpret_sygus(c[3], state)
+            :(==)           => interpret_sygus(c[2], state) == interpret_sygus(c[3], state) ? :waar : :onwaar
 
             _               => error("huilen")
     end
@@ -96,4 +105,4 @@ function interpret_sygus(expr, state=nothing)
     end
 end
 
-interpret_sygus(:($(Bool(0)) ? 1 : 2))
+#interpret_sygus(:($(Bool(0)) ? 1 : 2))

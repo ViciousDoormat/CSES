@@ -98,6 +98,8 @@ function add_constraints_dumb_12948338!(grammar)
     addconstraint!(grammar, Forbidden(RuleNode(strint, [RuleNode(dash)])))
     addconstraint!(grammar, Forbidden(RuleNode(strint, [RuleNode(space)])))
     addconstraint!(grammar, Forbidden(RuleNode(strint, [RuleNode(empty)])))
+
+    
 end
 
 function add_constraints_12948338!(grammar)
@@ -2234,6 +2236,13 @@ function add_constraints_dumb_convert_numbers_to_text!(grammar)
 
     addconstraint!(grammar, Forbidden(RuleNode(strint, [RuleNode(space)]))) 
     addconstraint!(grammar, Forbidden(RuleNode(strint, [RuleNode(empty)])))
+
+    # nums = falses(25)      
+    # nums[10:13] .= true
+
+    # addconstraint!(grammar, Forbidden(RuleNode(at, [RuleNode(space), DomainRuleNode(nums)]))) 
+    # addconstraint!(grammar, Forbidden(RuleNode(at, [RuleNode(empty), DomainRuleNode(nums)])))
+    # addconstraint!(grammar, Forbidden(RuleNode(at, [RuleNode(intstr, [DomainRuleNode(nums)]), DomainRuleNode(nums)]))) 
 end
 
 function add_constraints_convert_numbers_to_text!(grammar)
@@ -3209,31 +3218,32 @@ problems = [
     ["30732554", add_constraints_30732554!, [:_arg_1], add_constraints_dumb_30732554!, false]
 ]
 
+#TODO update appendix with -->
 R = @theory a b c begin
-    concat_cvc(a::String, "") == a
-    concat_cvc("", a::String) == a
+    concat_cvc(a::String, "") --> a
+    concat_cvc("", a::String) --> a
     replace_cvc(a::String, b::String, b::String) --> a
     replace_cvc("", a::String, b::String) --> ""
-    str_to_int_cvc(int_to_str_cvc(a::Int)) == a
-    int_to_str_cvc(str_to_int_cvc(a::String)) == a
+    str_to_int_cvc(int_to_str_cvc(a::Int)) --> a
+    int_to_str_cvc(str_to_int_cvc(a::String)) --> a
     a::Int+0 == a
     0 + a::Int == a
     a::Int - 0 == a
-    a == a --> true
-    prefixof_cvc(a::String, a::String) --> true
-    prefixof_cvc("", a::String) --> true
-    suffixof_cvc(a::String, a::String) --> true
-    suffixof_cvc("", a::String) --> true
-    contains_cvc(a::String, a::String) --> true
-    contains_cvc(a::String, "") --> true
+    a == a --> :waar
+    prefixof_cvc(a::String, a::String) --> :waar
+    prefixof_cvc("", a::String) --> :waar
+    suffixof_cvc(a::String, a::String) --> :waar
+    suffixof_cvc("", a::String) --> :waar
+    contains_cvc(a::String, a::String) --> :waar
+    contains_cvc(a::String, "") --> :waar
     concat_cvc(a::String, concat_cvc(b::String, c::String)) == concat_cvc(concat_cvc(a::String, b::String), c::String)
     len_cvc(concat_cvc(a::String, b::String)) == len_cvc(a::String) + len_cvc(b::String)
-    substr_cvc(a::String, 1, len_cvc(a::String)) == a
+    substr_cvc(a::String, 1, len_cvc(a::String)) --> a
     substr_cvc(a::String, 1, 0) --> ""
-    prefixof_cvc(a::String, concat_cvc(a::String, b::String)) --> true
-    suffixof_cvc(a::String, concat_cvc(b::String, a::String)) --> true
-    contains_cvc(concat_cvc(a::String, b::String), a::String) --> true
-    contains_cvc(concat_cvc(b::String, a::String), a::String) --> true
+    prefixof_cvc(a::String, concat_cvc(a::String, b::String)) --> :waar
+    suffixof_cvc(a::String, concat_cvc(b::String, a::String)) --> :waar
+    contains_cvc(concat_cvc(a::String, b::String), a::String) --> :waar
+    contains_cvc(concat_cvc(b::String, a::String), a::String) --> :waar
 end
 
 #append!(R, [eval(:(@rule a b $(:(a ? b : b)) --> b)), eval(:(@rule a b $(:(true ? a : b)) --> a)), eval(:(@rule a b $(:(false ? a : b)) --> b))])
@@ -3258,18 +3268,21 @@ end
 # end
 # close(io)
 
-io = open("results_my_system_1.txt", "w")  
-ioruler = open("ruler.txt", "w")  
 
-# #TODO add nutteloosheids constraints to normal enumeration
-# #TODO add iteration counter to enumeration, and for other one calculate all programs represnted by egraph vs all recursive steps
-for n in 1:1
+
+for n in 1:1 #TODO NIT AANZITTEN
+    io = open("withRwithSn=1.txt", "w")  
+    ioruler = open("withRwithSn=1_ruler.txt", "w") 
     for problem in problems
+         
         name = problem[1]
         constraints = problem[2]
         variables = problem[3]
         constraints_dumb = problem[4]
         find_indiv_solutions = problem[5] #for the ones it does not, I tested and it takes over the timeout time anyways so this saves me time
+
+        
+
         pair = get_problem_grammar_pair(PBE_SLIA_Track_2019, name) 
         g = pair.grammar
         examples = map(example -> [example], pair.problem.spec)
@@ -3279,16 +3292,16 @@ for n in 1:1
         solution = nothing
         
         starttime = time() #TODO dont forget to add R back
-        solution = solve(examples, g, :Start, variables, Union{String, Int, Bool, Expr, Symbol}, Union{String, Int, Bool, Symbol}, constraints, constraints_dumb, io, ioruler, find_indiv_solutions, 1, n)
+        solution = solve(examples, g, :Start, variables, Union{String, Int, Bool, Expr, Symbol}, Union{String, Int, Bool, Symbol}, constraints, constraints_dumb, io, ioruler, find_indiv_solutions, 1, n, R)
         totaltime = time() - starttime
-        println(io, "$name with n=$n: iterations $(solution[2]), estimate $(solution[3]), solution found: $(solution[1]), time $totaltime")
-
+        println(io, "$name with n=$n: iterations $(solution[2]), estimate $(solution[3]), solution found: $(solution[1]), time $totaltime, rulertime $(solution[4])")
         
     end
+    close(io)
+    close(ioruler)
 end
 
-close(io)
-close(ioruler)
+
 
 #=
 EASY(2 nodes):                                  SOLUTION:                                               UNIVERSAL SOLUTION FOUND:   TIME:

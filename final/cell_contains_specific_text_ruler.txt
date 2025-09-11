@@ -1,0 +1,11 @@
+
+cell_contains_specific_text with n=2
+example 1
+iteration 0
+2 candidates
+0.0 choose_eqs
+iteration 1
+706 candidates
+191.91600012779236 choose_eqs
+iteration 2
+26834 candidates

@@ -1,0 +1,11 @@
+
+44789427 with n=2
+example 1
+iteration 0
+2 candidates
+0.0 choose_eqs
+iteration 1
+803 candidates
+605.7939999103546 choose_eqs
+iteration 2
+20560 candidates

@@ -1,0 +1,1 @@
+compare_two_strings with n=2: iterations -1, estimate -1, solution found: nothing, time 1364.0460000038147, rulertime 1.757038979395e9

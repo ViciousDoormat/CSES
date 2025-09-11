@@ -1,0 +1,1 @@
+remove_characters_from_left with n=2: iterations -1, estimate -1, solution found: nothing, time 1720.1529998779297, rulertime 1.757045961772e9

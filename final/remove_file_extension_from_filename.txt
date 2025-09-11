@@ -1,0 +1,1 @@
+remove_file_extension_from_filename with n=2: iterations -1, estimate -1, solution found: nothing, time 5006.561999797821, rulertime 1.757070267425e9

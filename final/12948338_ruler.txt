@@ -1,0 +1,8 @@
+
+12948338 with n=2
+example 1
+iteration 0
+2 candidates
+0.0 choose_eqs
+iteration 1
+2844 candidates

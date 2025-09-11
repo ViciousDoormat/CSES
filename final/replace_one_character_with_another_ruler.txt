@@ -1,0 +1,11 @@
+
+replace_one_character_with_another with n=2
+example 1
+iteration 0
+1 candidates
+0.0 choose_eqs
+iteration 1
+470 candidates
+106.9060001373291 choose_eqs
+iteration 2
+15344 candidates

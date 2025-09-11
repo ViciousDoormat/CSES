@@ -1,0 +1,11 @@
+
+compare_two_strings with n=2
+example 1
+iteration 0
+3 candidates
+0.0 choose_eqs
+iteration 1
+321 candidates
+71.3600001335144 choose_eqs
+iteration 2
+5522 candidates

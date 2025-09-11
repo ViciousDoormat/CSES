@@ -1,0 +1,1 @@
+stackoverflow9 with n=2: iterations -1, estimate -1, solution found: nothing, time 1970.0060000419617, rulertime 1.757068297427e9

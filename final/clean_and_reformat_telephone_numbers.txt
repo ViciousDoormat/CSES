@@ -1,0 +1,1 @@
+clean_and_reformat_telephone_numbers with n=2: iterations -1, estimate -1, solution found: nothing, time 1355.9639999866486, rulertime 1.757060223936e9
