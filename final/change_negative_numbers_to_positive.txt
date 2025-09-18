@@ -1,1 +1,0 @@
-change_negative_numbers_to_positive with n=2: iterations -1, estimate -1, solution found: nothing, time 2023.319000005722, rulertime 1.757040345235e9

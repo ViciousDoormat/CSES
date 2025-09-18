@@ -1,8 +1,0 @@
-
-clean_and_reformat_telephone_numbers with n=2
-example 1
-iteration 0
-1 candidates
-0.0 choose_eqs
-iteration 1
-3166 candidates

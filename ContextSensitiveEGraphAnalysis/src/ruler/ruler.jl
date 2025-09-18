@@ -101,9 +101,6 @@ function EGraphs.make(g::EGraph{Expr, Vector{CVec}}, n::VecExpr)::Vector{CVec} w
     haskey(cvec_to_classes,cvec) || (cvec_to_classes[cvec] = Set())
     push!(cvec_to_classes[cvec],Metatheory.EGraphs.IdKey(g.memo[n]))
     
-
-    
-    #println(cvec)
     return cvec
 end
 
@@ -114,10 +111,8 @@ Join the cvecs of two merging eclasses.
 # TODO should the nothing or non-nothing values be chosen
 function EGraphs.join(a::Vector{CVec}, b::Vector{CVec})::Vector{CVec} where {CVec}
     if a == [:skip] || a == [:error]
-        #println(a,b)
         return b
     elseif b == [:skip] || b == [:error]
-        #println(b,b)
         return a
     end
     equal_cvecs(a,b) || error("Cannot join different cvecs $a and $b")
@@ -162,22 +157,18 @@ Returns a collection of rewrite rules from pairs of eclasses that have the same 
 If two eclasses were seen before and proven unequal, the rule they form should not be in the output.
 """
 function cvec_match(g::EGraph{Expr, Vector{CVec}}, variables::Vector{Symbol}, ::Type{CVec})::Vector{RewriteRule} where {CVec}
-    #eclasses = g.classes
     # All candidate rules found
     C::Vector{RewriteRule} = []
 
     for (turn,candidates) in enumerate(values(cvec_to_classes))
         print("turn: ", turn, "/", length(cvec_to_classes))
-        #candidates = cvec_to_classes[key]
         candidates = collect(candidates)
         for i in 1:(length(candidates)-1)
             loading_bar(i, length(candidates))
             key_x = candidates[i]
-            #x::Vector{CVec} = eclasses[key_x].data
     
             for j in (i+1):length(candidates)
                 key_y = candidates[j]   
-                #y::Vector{CVec} = eclasses[key_y].data
                 # If the cvecs match, and the classes are not proven unequal, create a candidate rule
                 #TODO note: equal cvecs removed because already checked when adding to cvec_to_classes
                 #TODO BUT, this only works for me cause I have cvecs of size 1
@@ -187,9 +178,6 @@ function cvec_match(g::EGraph{Expr, Vector{CVec}}, variables::Vector{Symbol}, ::
                     y_can = extract!(g, astsize, key_y.val)
     
                     # Make the rewrite rule
-                    #lhs = replace_with_symbol(x_can,variables)
-                    #rhs = replace_with_symbol(y_can,variables)
-                    #r = eval(:(@rule $lhs == $rhs))
                     r = create_rewrite_rule(x_can, y_can, variables)
     
                     push!(C, r)
@@ -244,9 +232,7 @@ function run_rewrites!(T, R::Vector{RewriteRule}#=, update::Bool=#) where {CVec}
     # To ensure that run_rewrites only shrinks the term e-graph, Ruler performs this equality
     # saturation on a copy of the e-graph
     g = deepcopy(T)
-    #println("saturate g")
     @invokelatest saturate!(g, R)
-    #println("saturation done")
 
     # It then copies the newly learned equalities (e-class merges) back to the original e-graph. 
     # This avoids polluting the e-graph with terms added during equality saturation.
@@ -299,17 +285,8 @@ function shrink(R::Vector{RewriteRule}, C::Vector{RewriteRule}, variables, ::Typ
         push!(classes_per_rule, (left_id, right_id))
     end
     println("run rewrites")
-    
-    
-    #start = time()
-    #if optimizations[2] # optimization three           
-        #@invokelatest saturate!(E, R)   
-    #else
-        run_rewrites!(E, R#=, false=#)
-    #end 
-    #total = time() - start #TODO write to file
-    
-    #println(io, "$total shrink")
+       
+    run_rewrites!(E, R#=, false=#)
 
     println("run rewrites done")
 
@@ -371,7 +348,6 @@ function choose_eqs_n(R::Vector{RewriteRule}, C::Vector{RewriteRule}, n, step, v
         until = min(step, length(C))
         selection,C = C[1:until],C[until+1:end]
 
-        #selection = [popfirst!(C) for _ in 1:(min(step, length(C)))]
         best = filter(is_valid, selection)
         bad = filter(!is_valid, selection)
         # TODO add bad to proven_unequal, I need to get the eclasses of the bad rules
@@ -402,7 +378,6 @@ function choose_eqs(R::Vector{RewriteRule}, C::Vector{RewriteRule}, variables, :
     # then the 100 approach
     start_time = time()
     if use_new_select
-        #old_length = length(C)+1
         while length(C) > 200
             println("length of C: ", length(C))
             old_length = length(C)
@@ -425,7 +400,7 @@ function choose_eqs(R::Vector{RewriteRule}, C::Vector{RewriteRule}, variables, :
             end
         end
     end
-    total = time() - start_time #TODO write to file
+    total = time() - start_time 
     println(io, "$total choose_eqs")
     return C
 end
@@ -447,10 +422,8 @@ function ruler(counts::Vector{Int}, D::Dict{Int, Vector{AllTypes}}, variables::V
         
         println("Added terms to T, run cvec_match")
 
-        #true to update cvec_to_classes after potential mergers
         run_rewrites!(T, R#=, true=#)
         println("Run rewrites done")
-        #println(cvec_to_classes)
 
         # Update cvec_to_classes after mergers
         for (key,values) in cvec_to_classes
@@ -463,13 +436,8 @@ function ruler(counts::Vector{Int}, D::Dict{Int, Vector{AllTypes}}, variables::V
         # Find all candidate rewrite rules in T
         C::Vector{RewriteRule} = cvec_match(T, variables, CVec)
         println(io, "$(length(C)) candidates")
-        #TODO write length(C) to file
 
         println("Found $(length(C)) candidate rules, select rules")
-        #println(T)
-        #println(cvec_to_classes)
-        #println(R)
-        #println(C)
 
         # Select the best rules from the candidate set
         while !isempty(C)

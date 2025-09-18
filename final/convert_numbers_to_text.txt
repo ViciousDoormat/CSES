@@ -1,1 +1,0 @@
-convert_numbers_to_text with n=2: iterations -1, estimate -1, solution found: nothing, time 1268.2749998569489, rulertime 1.757029936918e9

@@ -12,7 +12,6 @@ function find_individual_solution(problem, grammar, grammar_root, num_solutions,
     for candidate_program ∈ BFSIterator(grammar, grammar_root)
         # Create expression from rulenode representation of AST
         expr = rulenode2expr(candidate_program, grammar)
-        #println(expr)
     
         # Evaluate the expression
         score = HerbSearch.evaluate(problem, expr, symboltable, allow_evaluation_errors=true)
@@ -38,19 +37,15 @@ function find_solutions_per_example(examples, grammar, grammar_root, num_solutio
 
     constraints(grammar)
 
-    #println("start")
     start = time()
 
     for candidate_program ∈ BFSIterator(grammar, grammar_root)
         expr = rulenode2expr(candidate_program, grammar)
         all(variable -> contains_variable(expr, variable), variables) || continue
-        #println(expr)
         for (num, example) in enumerate(examples)
             fs[num] && continue
             score = HerbSearch.evaluate(Problem("example$num", example), expr, symboltable, allow_evaluation_errors=true)
             if score == 1
-                #expr = rulenode2expr(HerbConstraints.freeze_state(candidate_program),grammar) TODO maybe does something
-                #println("example $num has solution $expr")
                 push!(solutions_per_example[num], expr)
                 if length(solutions_per_example[num]) >= num_solutions+1
                     fs[num] = true
@@ -62,8 +57,6 @@ function find_solutions_per_example(examples, grammar, grammar_root, num_solutio
         all(fs) && break
 
     end
-
-    #println(time() - start)
     
     return solutions_per_example
 end
@@ -77,7 +70,6 @@ function generate_small_terms(grammar, up_to_size, grammar_root, examples)
     for type in unique(grammar.types)
         iter = BFSIterator(grammar, type, max_size=(up_to_size+3)) #TODO changed this to 2
         solver::Solver = iter.solver::Solver
-        #println(solver)
         for candidate_program ∈ iter
             expr = rulenode2expr(candidate_program, grammar) 
 
@@ -93,7 +85,6 @@ function generate_small_terms(grammar, up_to_size, grammar_root, examples)
                 # end
             end
 
-            #count_operators(expr) <= up_to_size  || break TODO it iterates incorectly for this; in order of size; size(--x) == size(x+1)
         end
     end
 
@@ -111,7 +102,6 @@ function create_termset(examples, grammar, grammar_root, variables, ::Type{AllTy
     constraints_dumb(grammar)
     small_terms = generate_small_terms(grammar, up_to_size, grammar_root, examples)
     clearconstraints!(grammar)
-    #println(length(small_terms))
 
     for e in examples
         union!(D, values(e[1].in))
@@ -124,8 +114,6 @@ function create_termset(examples, grammar, grammar_root, variables, ::Type{AllTy
     else
         solutions_per_example = Dict{Int, Vector{AllTypes}}(i => [examples[i][1].out] for i in 1:length(examples))
     end
-
-    #solutions_per_example = Dict{Int64, Vector{Union{Bool, Int64, Expr, String, Symbol}}}(2 => ["1002", :(int_to_str_cvc(_arg_1))], 3 => ["743", :(int_to_str_cvc(_arg_1))], 1 => ["101", :(int_to_str_cvc(_arg_1))])
 
     for solutions in values(solutions_per_example)
         union!(D, solutions)

@@ -1,1 +1,0 @@
-19558979 with n=2: iterations -1, estimate -1, solution found: nothing, time 1399.8600001335144, rulertime 1.757058824291e9

@@ -1,1 +1,0 @@
-join_first_and_last_name with n=2: iterations -1, estimate -1, solution found: nothing, time 5484.7409999370575, rulertime 1.75704757947e9

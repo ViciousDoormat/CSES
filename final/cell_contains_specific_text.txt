@@ -1,1 +1,0 @@
-cell_contains_specific_text with n=2: iterations -1, estimate -1, solution found: nothing, time 2079.28200006485, rulertime 1.757032401055e9

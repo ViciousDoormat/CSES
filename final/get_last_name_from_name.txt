@@ -1,1 +1,0 @@
-get_last_name_from_name with n=2: iterations -1, estimate -1, solution found: nothing, time 2277.936000108719, rulertime 1.757081812337e9
